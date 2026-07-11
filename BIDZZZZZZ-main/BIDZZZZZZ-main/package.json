@@ -1,0 +1,9 @@
+{
+  "name": "biddzone-root",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "dev:frontend": "npm --prefix Front-end run dev",
+    "dev:backend": "npm --prefix back-end run dev"
+  }
+}
