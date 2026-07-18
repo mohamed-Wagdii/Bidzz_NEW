@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authAPI } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
+import { GoogleLogin } from "@react-oauth/google";
+import FacebookLogin from "@greatsumini/react-facebook-login";
 import FormLabel from "../../components/auth/FormLabel";
 import FormInput from "../../components/auth/FormInput";
 import SubmitButton from "../../components/auth/SubmitButton";
@@ -42,6 +44,23 @@ export default function Register() {
       login(data.token, data.user);
       if (data.user.role === "seller") navigate("/seller-dashboard");
       else navigate("/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.message || "Registration failed. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOAuthSuccess = async (provider, token) => {
+    setLoading(true);
+    try {
+      let data;
+      if (provider === "google") data = await authAPI.google(token);
+      if (provider === "facebook") data = await authAPI.facebook(token);
+      login(data.token, data.user);
+      if (data.user.role === "admin")       navigate("/admin");
+      else if (data.user.role === "seller") navigate("/seller-dashboard");
+      else                                  navigate("/buyer-dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed. Try again.");
     } finally {
@@ -189,6 +208,39 @@ export default function Register() {
             <SubmitButton style={s.submitBtn} disabled={loading}>
               {loading ? "PROCESSING..." : "Complete Registration 🔒"}
             </SubmitButton>
+
+            {/* ── OAuth ── */}
+            <div style={{ display: "flex", alignItems: "center", margin: "24px 0 16px" }}>
+              <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
+              <span style={{ padding: "0 10px", fontSize: 12, color: "#9ca3af", fontWeight: 600 }}>OR</span>
+              <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <GoogleLogin
+                  onSuccess={(res) => handleOAuthSuccess("google", res.credential)}
+                  onError={() => setError("Google login failed.")}
+                  useOneTap
+                />
+              </div>
+              <FacebookLogin
+                appId={import.meta.env.VITE_FACEBOOK_APP_ID || "1234567890"}
+                onSuccess={(res) => handleOAuthSuccess("facebook", res.accessToken)}
+                onFail={() => setError("Facebook login failed.")}
+                onProfileSuccess={() => {}}
+                style={{
+                  width: "100%", padding: "10px", background: "#1877F2",
+                  color: "#fff", border: "none", borderRadius: 4,
+                  fontSize: 14, fontWeight: 700, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  height: 40
+                }}
+              >
+                <span style={{ fontSize: 18, background: "#fff", color: "#1877f2", borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center" }}>f</span>
+                Continue with Facebook
+              </FacebookLogin>
+            </div>
           </form>
         </div>
       </div>

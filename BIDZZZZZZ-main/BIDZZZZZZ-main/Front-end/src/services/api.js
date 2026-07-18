@@ -24,6 +24,7 @@ export const authAPI = {
   login: (data) => api.post("/auth/login", data).then((r) => r.data),
   register: (data) => api.post("/auth/register", data).then((r) => r.data),
   google: (credential) => api.post("/auth/google", { credential }).then((r) => r.data),
+  facebook: (accessToken) => api.post("/auth/facebook", { accessToken }).then((r) => r.data),
   forgotPassword: (email) => api.post("/auth/forgot-password", { email }).then((r) => r.data),
   resetPassword: (token, password) => api.post("/auth/reset-password", { token, password }).then((r) => r.data),
   getProfile: () => api.get("/auth/profile").then((r) => r.data),
