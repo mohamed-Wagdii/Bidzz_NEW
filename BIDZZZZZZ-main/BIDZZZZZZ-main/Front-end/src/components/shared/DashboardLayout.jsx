@@ -88,7 +88,10 @@ function Sidebar({ navItems, actions, collapsed, onToggle }) {
       flexShrink: 0,
     }}>
       {/* Brand block */}
-      <div style={{ padding: "16px 18px 12px", borderBottom: "1px solid var(--sidebar-border)", background: "linear-gradient(135deg, rgba(201,168,76,0.12), rgba(201,168,76,0.04))" }}>
+      <div 
+        onClick={() => navigate("/dashboard")}
+        style={{ cursor: "pointer", padding: "20px 18px 16px", borderBottom: "1px solid var(--sidebar-border)", background: "linear-gradient(135deg, rgba(201,168,76,0.12), rgba(201,168,76,0.04))" }}
+      >
         <div style={{ display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : "flex-start", gap: 10 }}>
           <div style={{ width: 42, height: 42, borderRadius: "12px", background: "var(--gold)", color: "#111", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 18, letterSpacing: 1, boxShadow: "0 6px 18px rgba(0,0,0,0.18)" }}>
             BZ
@@ -131,7 +134,7 @@ function Sidebar({ navItems, actions, collapsed, onToggle }) {
       )}
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: "8px 0", overflowY: "auto", overflowX: "hidden" }}>
+      <nav style={{ flex: 1, padding: "16px 12px", overflowY: "auto", overflowX: "hidden", display: "flex", flexDirection: "column", gap: 8 }}>
         {navItems.map(item => {
           const active = location.pathname === item.path;
           return (
@@ -140,15 +143,16 @@ function Sidebar({ navItems, actions, collapsed, onToggle }) {
               onClick={() => navigate(item.path)}
               title={collapsed ? label(item) : undefined}
               style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: collapsed ? "12px 0" : "12px 16px",
+                display: "flex", alignItems: "center", gap: 12,
+                padding: collapsed ? "14px 0" : "14px 16px",
                 justifyContent: collapsed ? "center" : "flex-start",
-                fontSize: 15, fontWeight: active ? 600 : 400,
+                fontSize: 16, fontWeight: active ? 600 : 500,
                 color: active ? "#fff" : "var(--sidebar-text)",
                 background: active ? "var(--sidebar-active-bg)" : "transparent",
-                borderLeft: active ? "3px solid var(--gold)" : "3px solid transparent",
+                borderLeft: active ? "4px solid var(--gold)" : "4px solid transparent",
+                borderRadius: active ? "0 8px 8px 0" : "0",
                 cursor: "pointer",
-                transition: "all 0.15s",
+                transition: "all 0.2s ease-in-out",
                 whiteSpace: "nowrap",
               }}
               onMouseEnter={e => { if (!active) e.currentTarget.style.color = "#fff"; }}
@@ -228,10 +232,10 @@ export default function DashboardLayout({ children, role }) {
     : [];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "var(--surface-2)", fontFamily: "var(--font-sans)" }}>
-      <Navbar />
-      <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar navItems={navItems} actions={actions} collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
+    <div style={{ display: "flex", flexDirection: "row", minHeight: "100vh", background: "var(--surface-2)", fontFamily: "var(--font-sans)" }}>
+      <Sidebar navItems={navItems} actions={actions} collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
+        <Navbar />
         <main style={{ flex: 1, padding: "28px 32px", overflowY: "auto", minWidth: 0 }} className="fade-in">
           {children}
         </main>
