@@ -13,10 +13,7 @@ const embeddingModel = genAI.getGenerativeModel({
 
 export async function createEmbedding(text) {
   try {
-    const result = await embeddingModel.embedContent({
-      content: { parts: [{ text }], role: "user" },
-      taskType: "RETRIEVAL_QUERY",
-    });
+    const result = await embeddingModel.embedContent(text);
     return result.embedding.values;
   } catch (error) {
     console.error("Gemini Embedding Error:", error.message);

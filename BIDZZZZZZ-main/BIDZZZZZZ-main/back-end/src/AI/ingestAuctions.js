@@ -6,10 +6,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
 
 async function createDocEmbedding(text) {
-  const result = await embeddingModel.embedContent({
-    content: { parts: [{ text }], role: "user" },
-    taskType: "RETRIEVAL_DOCUMENT",
-  });
+  const result = await embeddingModel.embedContent(text);
   return result.embedding.values;
 }
 

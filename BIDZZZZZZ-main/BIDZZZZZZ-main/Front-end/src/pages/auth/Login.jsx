@@ -4,11 +4,7 @@ import { authAPI } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 
-const DEMO = [
-  { label: "Buyer",  labelAr: "مشتري",  email: "buyer@demo.com",  pass: "123", icon: "🛒", color: "#3b82f6" },
-  { label: "Seller", labelAr: "بائع",   email: "seller@demo.com", pass: "123", icon: "🏪", color: "#C9A84C" },
-  { label: "Admin",  labelAr: "مدير",   email: "admin@demo.com",  pass: "123", icon: "⚙️", color: "#10b981" },
-];
+
 
 const TEXT = {
   en: {
@@ -66,10 +62,7 @@ export default function Login() {
     setError("");
   };
 
-  const fillDemo = (acc) => {
-    setForm({ email: acc.email, password: acc.pass });
-    setError("");
-  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -115,39 +108,7 @@ export default function Login() {
 
       <div style={wrapper}>
 
-        {/* ── Demo accounts ── */}
-        <div style={demoBox}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#0f1117", marginBottom: 12 }}>
-            🚀 {t.demoTitle}
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {DEMO.map((acc) => (
-              <button
-                key={acc.label}
-                onClick={() => fillDemo(acc)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 12,
-                  padding: "10px 14px", borderRadius: 10, cursor: "pointer",
-                  border: `1.5px solid ${form.email === acc.email ? acc.color : "#e5e7eb"}`,
-                  background: form.email === acc.email ? acc.color + "12" : "#fff",
-                  textAlign: isRTL ? "right" : "left", width: "100%",
-                  transition: "all 0.15s",
-                }}
-              >
-                <span style={{ fontSize: 22, flexShrink: 0 }}>{acc.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 13, color: acc.color }}>
-                    {lang === "ar" ? acc.labelAr : acc.label}
-                  </div>
-                  <div style={{ fontSize: 11, color: "#888" }}>{acc.email} &nbsp;·&nbsp; password: <b>123</b></div>
-                </div>
-                {form.email === acc.email && (
-                  <span style={{ color: acc.color, fontSize: 18, fontWeight: 700 }}>✓</span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
+
 
         {/* ── Login card ── */}
         <div style={card}>
@@ -246,7 +207,7 @@ const topBar  = { display: "flex", justifyContent: "space-between", alignItems: 
 const logo    = { fontWeight: 800, fontSize: 22, letterSpacing: 1, textDecoration: "none", fontFamily: "Sora,Inter,sans-serif" };
 const langBtn = { background: "none", border: "1px solid #e5e7eb", borderRadius: 20, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#555" };
 const wrapper = { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 16px", gap: 20 };
-const demoBox = { width: "100%", maxWidth: 480, background: "#fff", border: "2px dashed #C9A84C", borderRadius: 14, padding: "18px 20px" };
+
 const card    = { width: "100%", maxWidth: 480, background: "#fff", borderRadius: 16, boxShadow: "0 4px 24px rgba(0,0,0,0.08)", overflow: "hidden" };
 const cardHeader = { background: "linear-gradient(135deg,#0d1117,#1e2a3a)", padding: "24px 28px", textAlign: "center" };
 const fieldLabel = { display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 };
