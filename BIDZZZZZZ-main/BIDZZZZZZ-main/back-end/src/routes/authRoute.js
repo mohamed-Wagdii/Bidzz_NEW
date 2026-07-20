@@ -11,14 +11,12 @@ import Ticket from "../models/Ticket.js";
 import Wallet from "../models/Wallet.js";
 import Report from "../models/Report.js";
 
-import { facebookLogin } from "../controller/facebookAuthController.js";
 
 const router = express.Router();
 
 router.post("/register", register);
 router.post("/login", login);
 router.post("/google", googleLogin);
-router.post("/facebook", facebookLogin);
 router.post("/forgot-password", requestPasswordReset);
 router.post("/reset-password", resetPassword);
 

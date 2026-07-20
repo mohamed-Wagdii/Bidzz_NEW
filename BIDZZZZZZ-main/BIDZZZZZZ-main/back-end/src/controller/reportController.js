@@ -9,6 +9,16 @@ export const submitReport = async (req, res) => {
     if (!targetType || !targetId || !reason)
       return res.status(400).json({ message: "targetType, targetId and reason are required." });
 
+    const allowedTargetTypes = ["user", "auction", "product"];
+    if (!allowedTargetTypes.includes(targetType)) {
+      return res.status(400).json({ message: `targetType must be one of: ${allowedTargetTypes.join(", ")}` });
+    }
+
+    const allowedReasons = ["spam", "fraud", "fake_item", "inappropriate", "other"];
+    if (!allowedReasons.includes(reason)) {
+      return res.status(400).json({ message: `reason must be one of: ${allowedReasons.join(", ")}` });
+    }
+
     // Prevent duplicate pending reports from same user
     const existing = await Report.findOne({
       reporter: req.user._id,
@@ -34,6 +44,7 @@ export const submitReport = async (req, res) => {
     res.status(500).json({ message: "Server error." });
   }
 };
+
 
 export const getMyReports = async (req, res) => {
   try {

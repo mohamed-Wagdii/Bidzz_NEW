@@ -11,9 +11,13 @@ const embeddingModel = genAI.getGenerativeModel({
   model: "text-embedding-004",
 });
 
+// Use RETRIEVAL_QUERY taskType for user questions — improves semantic relevance
 export async function createEmbedding(text) {
   try {
-    const result = await embeddingModel.embedContent(text);
+    const result = await embeddingModel.embedContent({
+      content: { parts: [{ text }], role: "user" },
+      taskType: "RETRIEVAL_QUERY",
+    });
     return result.embedding.values;
   } catch (error) {
     console.error("Gemini Embedding Error:", error.message);

@@ -44,7 +44,13 @@ router.patch("/users/:id", async (req, res) => {
   try {
     const { role, lockUntil } = req.body;
     const update = {};
-    if (role)      update.role      = role;
+    if (role !== undefined) {
+      const allowedRoles = ["buyer", "seller", "admin"];
+      if (!allowedRoles.includes(role)) {
+        return res.status(400).json({ message: `role must be one of: ${allowedRoles.join(", ")}` });
+      }
+      update.role = role;
+    }
     if (lockUntil !== undefined) update.lockUntil = lockUntil;
     const user = await User.findByIdAndUpdate(req.params.id, update, { new: true })
       .select("-password");
@@ -137,9 +143,21 @@ router.get("/orders", async (req, res) => {
 router.patch("/orders/:id", async (req, res) => {
   try {
     const { orderStatus, paymentStatus } = req.body;
+    const allowedOrderStatuses = ["pending", "processing", "shipped", "delivered", "cancelled"];
+    const allowedPaymentStatuses = ["pending", "paid", "failed", "refunded"];
     const update = {};
-    if (orderStatus)  update.orderStatus  = orderStatus;
-    if (paymentStatus) update.paymentStatus = paymentStatus;
+    if (orderStatus !== undefined) {
+      if (!allowedOrderStatuses.includes(orderStatus)) {
+        return res.status(400).json({ message: `orderStatus must be one of: ${allowedOrderStatuses.join(", ")}` });
+      }
+      update.orderStatus = orderStatus;
+    }
+    if (paymentStatus !== undefined) {
+      if (!allowedPaymentStatuses.includes(paymentStatus)) {
+        return res.status(400).json({ message: `paymentStatus must be one of: ${allowedPaymentStatuses.join(", ")}` });
+      }
+      update.paymentStatus = paymentStatus;
+    }
     const order = await Order.findByIdAndUpdate(req.params.id, update, { new: true });
     if (!order) return res.status(404).json({ message: "Order not found." });
     res.json({ order });

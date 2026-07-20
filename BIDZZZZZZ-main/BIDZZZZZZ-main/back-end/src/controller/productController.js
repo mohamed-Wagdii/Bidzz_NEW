@@ -1,5 +1,10 @@
 import Product from "../models/Product.js";
 
+// Strip HTML tags and trim — lightweight XSS prevention without extra deps
+function sanitizeString(str) {
+  return String(str).replace(/<[^>]*>/g, "").trim();
+}
+
 export const createProduct = async (req, res) => {
   try {
     if (req.user.role !== "seller") {
@@ -8,11 +13,23 @@ export const createProduct = async (req, res) => {
 
     const { name, description, price } = req.body;
 
-    if (!name || !description || !price) {
+    if (!name || !description || price === undefined || price === null || price === "") {
       return res.status(400).json({ message: "Name, description, and price are required" });
     }
 
-    if (parseFloat(price) <= 0) {
+    const cleanName = sanitizeString(name);
+    const cleanDescription = sanitizeString(description);
+    const parsedPrice = parseFloat(price);
+
+    if (!cleanName || cleanName.length < 2 || cleanName.length > 200) {
+      return res.status(400).json({ message: "Name must be between 2 and 200 characters" });
+    }
+
+    if (!cleanDescription || cleanDescription.length < 5 || cleanDescription.length > 2000) {
+      return res.status(400).json({ message: "Description must be between 5 and 2000 characters" });
+    }
+
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
       return res.status(400).json({ message: "Price must be a positive number" });
     }
 
@@ -25,9 +42,9 @@ export const createProduct = async (req, res) => {
     const imageUrls = req.files.map(f => `/images/${f.filename}`);
 
     const product = new Product({
-      name,
-      description,
-      price: parseFloat(price),
+      name: cleanName,
+      description: cleanDescription,
+      price: parsedPrice,
       image: imageUrls,
       seller: req.user._id,
     });

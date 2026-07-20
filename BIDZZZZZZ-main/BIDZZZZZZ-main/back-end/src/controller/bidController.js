@@ -7,9 +7,10 @@ import { ensureWalletForUser, lockFunds, unlockFunds } from "./walletController.
 export const placeBid = async (req, res) => {
   try {
     const { auctionId } = req.params;
-    const { amount } = req.body;
+    const { amount: rawAmount } = req.body;
 
-    if (!amount || amount <= 0) {
+    const amount = parseFloat(rawAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
       return res.status(400).json({ message: "Bid amount must be a positive number" });
     }
 

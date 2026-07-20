@@ -75,22 +75,32 @@ export const createAuction = async (req, res) => {
     if (ticket.user.toString() !== req.user._id.toString()) return res.status(403).json({ message: "Not your ticket" });
     if (ticket.expiresAt < new Date()) return res.status(400).json({ message: "Ticket expired" });
 
-    if (!productId || !startingPrice || !endTime) {
+    if (!productId || startingPrice === undefined || startingPrice === null || !endTime) {
       return res.status(400).json({ message: "Product ID, starting price and end time are required." });
     }
     if (req.user.role !== "seller") return res.status(403).json({ message: "Only sellers can create auctions." });
+
+    const parsedPrice = parseFloat(startingPrice);
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+      return res.status(400).json({ message: "Starting price must be a positive number." });
+    }
+
+    const parsedEndTime = new Date(endTime);
+    if (isNaN(parsedEndTime.getTime())) {
+      return res.status(400).json({ message: "End time is not a valid date." });
+    }
+    if (parsedEndTime <= new Date()) return res.status(400).json({ message: "End time must be in the future." });
 
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ message: "Product not found." });
     if (product.seller.toString() !== req.user._id.toString()) return res.status(403).json({ message: "You are not the seller of this product" });
     if (product.status !== "approved") return res.status(400).json({ message: "Product is not available for auction." });
-    if (new Date(endTime) <= new Date()) return res.status(400).json({ message: "End time must be in the future." });
 
     const auction = await Auction.create({
       Product: productId,
       seller: req.user._id,
-      startingPrice: parseFloat(startingPrice),
-      endTime,
+      startingPrice: parsedPrice,
+      endTime: parsedEndTime,
       startTime: new Date(),
       status: "active",
     });
@@ -164,11 +174,22 @@ export const updateAuctions = async (req, res) => {
 
     if (auction.status === "pending") {
       if (startTime) auction.startTime = startTime;
-      if (endTime) auction.endTime = endTime;
-      if (startingPrice) auction.startingPrice = startingPrice;
+      if (endTime) {
+        const parsedEnd = new Date(endTime);
+        if (isNaN(parsedEnd.getTime())) return res.status(400).json({ message: "End time is not a valid date." });
+        auction.endTime = parsedEnd;
+      }
+      if (startingPrice !== undefined) {
+        const parsedPrice = parseFloat(startingPrice);
+        if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+          return res.status(400).json({ message: "Starting price must be a positive number." });
+        }
+        auction.startingPrice = parsedPrice;
+      }
     } else if (auction.status === "active") {
       if (endTime) {
         const newEndTime = new Date(endTime);
+        if (isNaN(newEndTime.getTime())) return res.status(400).json({ message: "End time is not a valid date." });
         if (newEndTime <= new Date()) return res.status(400).json({ message: "End time must be in the future." });
         auction.endTime = newEndTime;
       }

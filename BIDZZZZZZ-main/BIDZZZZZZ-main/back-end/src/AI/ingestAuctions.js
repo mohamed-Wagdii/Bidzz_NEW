@@ -5,8 +5,12 @@ import { buildAuctionDocument } from "./buildDocument.js";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
 
+// Use RETRIEVAL_DOCUMENT for ingestion — pairs with RETRIEVAL_QUERY on the search side
 async function createDocEmbedding(text) {
-  const result = await embeddingModel.embedContent(text);
+  const result = await embeddingModel.embedContent({
+    content: { parts: [{ text }], role: "user" },
+    taskType: "RETRIEVAL_DOCUMENT",
+  });
   return result.embedding.values;
 }
 

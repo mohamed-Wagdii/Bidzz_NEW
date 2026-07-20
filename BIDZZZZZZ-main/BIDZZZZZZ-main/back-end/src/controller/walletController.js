@@ -24,14 +24,19 @@ export const getWallet = async (req, res) => {
 
 export const addBalance = async (req, res) => {
   try {
-    const { amount } = req.body;
-    if (!amount || amount <= 0) return res.status(400).json({ message: "Amount must be positive" });
+    const value = parseFloat(req.body.amount);
+    if (!Number.isFinite(value) || value <= 0) {
+      return res.status(400).json({ message: "Amount must be a positive number" });
+    }
+    if (value > 10000) {
+      return res.status(400).json({ message: "Single deposit cannot exceed $10,000" });
+    }
 
     const wallet = await ensureWalletForUser(req.user._id);
-    wallet.balance += Number(amount);
+    wallet.balance += value;
     await wallet.save();
 
-    await logTransaction({ user: req.user._id, type: "deposit", amount: Number(amount), description: "Wallet deposit" });
+    await logTransaction({ user: req.user._id, type: "deposit", amount: value, description: "Wallet deposit" });
 
     res.json({ message: "Deposit successful", wallet });
   } catch (error) {
@@ -41,11 +46,12 @@ export const addBalance = async (req, res) => {
 
 export const withdrawBalance = async (req, res) => {
   try {
-    const { amount } = req.body;
-    if (!amount || amount <= 0) return res.status(400).json({ message: "Amount must be positive" });
+    const value = parseFloat(req.body.amount);
+    if (!Number.isFinite(value) || value <= 0) {
+      return res.status(400).json({ message: "Amount must be a positive number" });
+    }
 
     const wallet = await ensureWalletForUser(req.user._id);
-    const value = Number(amount);
 
     if (wallet.balance < value) return res.status(400).json({ message: "Insufficient balance" });
 

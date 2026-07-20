@@ -46,6 +46,12 @@ app.use(cors({
 // ── HTTP request logging ──────────────────────────────────────────────────────
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev", { stream: accessLogStream }));
 
+// ── Raw body for Stripe webhooks (must come BEFORE express.json) ──────────────
+app.use("/api/orders/stripe/webhook", express.raw({ type: "application/json" }), (req, _res, next) => {
+  req.rawBody = req.body;
+  next();
+});
+
 // ── Body parsing ──────────────────────────────────────────────────────────────
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));

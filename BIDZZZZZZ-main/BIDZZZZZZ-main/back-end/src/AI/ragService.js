@@ -27,6 +27,9 @@ function cosineSimilarity(a, b) {
   magA = Math.sqrt(magA);
   magB = Math.sqrt(magB);
 
+  // Guard against zero-magnitude vectors to prevent NaN from division by zero
+  if (magA === 0 || magB === 0) return 0;
+
   return dot / (magA * magB);
 }
 
@@ -36,6 +39,7 @@ function cosineSimilarity(a, b) {
 // (هنا بنجيب أقرب داتا للسؤال)
 // ===============================
 async function searchSimilarAuctions(userQuery, topK = 3) {
+  // createEmbedding uses RETRIEVAL_QUERY taskType — see embed.js
   const queryEmbedding = await createEmbedding(userQuery);
   const allDocs = await AuctionEmbedding.find();
   if (!allDocs.length) return [];

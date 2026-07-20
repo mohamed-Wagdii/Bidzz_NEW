@@ -8,15 +8,17 @@ router.post("/ask", authMiddleware, async (req, res) => {
   try {
     const { question } = req.body;
 
-    // validation بسيطة
-    if (!question) {
-      return res.status(400).json({
-        message: "Question is required",
-      });
+    if (!question || typeof question !== "string" || !question.trim()) {
+      return res.status(400).json({ message: "Question is required" });
     }
 
-    // نكلم الـ RAG system
-    const result = await askAuctionAI(question);
+    const cleanQuestion = question.replace(/<[^>]*>/g, "").trim().slice(0, 500);
+
+    if (!cleanQuestion) {
+      return res.status(400).json({ message: "Question cannot be empty" });
+    }
+
+    const result = await askAuctionAI(cleanQuestion);
 
     return res.status(200).json({
       success: true,
