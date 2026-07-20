@@ -31,6 +31,7 @@ import SellFlow from "./pages/Auctions/Sellflow";
 // Admin pages
 import AdminDashboard from "./pages/Dashboards/AdminDashboard";
 import AdminReportsPage from "./pages/Dashboards/AdminReportsPage";
+import AdminWalletPage from "./pages/Dashboards/AdminWalletPage";
 import AdminUsersPage from "./pages/Dashboards/AdminUsersPage";
 import AdminAuctionsPage from "./pages/Dashboards/AdminAuctionsPage";
 import AdminOrdersPage from "./pages/Dashboards/AdminOrdersPage";
@@ -88,6 +89,7 @@ export default function App() {
           {/* ── Admin only ── */}
           <Route path="/admin" element={<RoleRoute role="admin"><AdminDashboard /></RoleRoute>} />
           <Route path="/admin/reports" element={<RoleRoute role="admin"><AdminReportsPage /></RoleRoute>} />
+          <Route path="/admin/wallet" element={<RoleRoute role="admin"><AdminWalletPage /></RoleRoute>} />
           <Route path="/admin/users" element={<RoleRoute role="admin"><AdminUsersPage /></RoleRoute>} />
           <Route path="/admin/auctions" element={<RoleRoute role="admin"><AdminAuctionsPage /></RoleRoute>} />
           <Route path="/admin/orders" element={<RoleRoute role="admin"><AdminOrdersPage /></RoleRoute>} />

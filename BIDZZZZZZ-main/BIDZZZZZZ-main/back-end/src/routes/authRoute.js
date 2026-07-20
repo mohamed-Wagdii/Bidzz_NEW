@@ -122,13 +122,14 @@ router.get("/analytics", authMiddleware, async (req, res) => {
       Auction.countDocuments({ status: "active" }),
       Bid.countDocuments(),
       Order.countDocuments(),
-      Order.countDocuments({ paymentStatus: "paid" }),
+      Order.countDocuments({ paymentStatus: "paid", orderStatus: "delivered" }),
       Ticket.countDocuments(),
       User.countDocuments(),
       User.countDocuments({ role: "buyer" }),
       User.countDocuments({ role: "seller" }),
       Report.countDocuments({ status: "pending" }),
-      Order.find({ paymentStatus: "paid" })
+      Order.find()
+        .populate("product", "name")
         .populate({ path: "auction", populate: { path: "Product", select: "name" } })
         .populate("winner", "fullName")
         .sort({ createdAt: -1 }).limit(5),
@@ -173,7 +174,7 @@ router.get("/analytics", authMiddleware, async (req, res) => {
       monthlyRevenue,
       topSellers,
       recentOrders: recentOrders.map(o => ({
-        id: o._id, item: o.auction?.Product?.name ?? "Auction Item",
+        id: o._id, item: o.product?.name ?? o.auction?.Product?.name ?? "Auction Item",
         bid: o.finalPrice, buyer: o.winner?.fullName ?? "Unknown",
         status: o.paymentStatus, orderStatus: o.orderStatus,
       })),

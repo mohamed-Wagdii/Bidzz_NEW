@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePageTitle } from "../../hooks/usePageTitle";
 import { Link, useNavigate } from "react-router-dom";
 import { authAPI } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
@@ -12,6 +13,7 @@ import Footer from "../../components/layout/Footer";
 export default function Register() {
   const navigate = useNavigate();
   const { login } = useAuth();
+  usePageTitle("Sign Up");
 
   const [role, setRole] = useState("buyer");
   const [showPass, setShowPass] = useState(false);

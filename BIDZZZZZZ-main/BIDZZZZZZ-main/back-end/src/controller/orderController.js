@@ -83,72 +83,55 @@ export const payWithWallet = async (req, res) => {
       return res.status(400).json({ message: "Order already paid" });
     }
 
-    const buyerWallet = await ensureWalletForUser(req.user._id);
-    if (buyerWallet.balance < order.finalPrice) {
-      return res.status(400).json({ message: "Insufficient wallet balance" });
-    }
-
-    // Find or create admin escrow wallet
+    // Money is already in Admin Escrow from the bid lock phase.
     const adminUser = await (await import("../models/User.js")).default.findOne({ role: "admin" });
     if (!adminUser) return res.status(500).json({ message: "Admin account not found" });
     const adminWallet = await ensureWalletForUser(adminUser._id);
 
-    // Deduct from buyer
-    buyerWallet.balance -= order.finalPrice;
-    await buyerWallet.save();
+    if (adminWallet.escrowBalance < order.finalPrice) {
+      return res.status(400).json({ message: "System error: insufficient escrow funds for this order." });
+    }
+
+    // Log the formal payment completion
     await WalletTransaction.create({
       user: req.user._id,
       type: "order_charge",
       amount: order.finalPrice,
       status: "completed",
-      description: `Payment for order #${order._id}`,
+      description: `Confirmed payment for order #${order._id}`,
       relatedOrder: order._id,
     });
-
-    // Add to admin escrow
-    adminWallet.escrowBalance += order.finalPrice;
-    await adminWallet.save();
-    await WalletTransaction.create({
-      user: adminUser._id,
-      type: "escrow_hold",
-      amount: order.finalPrice,
-      status: "completed",
-      description: `Escrow received for order #${order._id}`,
-      relatedOrder: order._id,
-    });
-
-    // Generate QR code
-    const qrPayload = JSON.stringify({ orderId: order._id.toString(), v: 1 });
-    const qrCode = await QRCode.toDataURL(qrPayload);
 
     order.paymentStatus = "paid";
     order.orderStatus = "processing";
     order.paidAt = new Date();
-    order.qrCode = qrCode;
     await order.save();
 
-    // Notify buyer
+    const qrData = JSON.stringify({ orderId: order._id, token: Math.random().toString(36).substring(7) });
+    order.qrCode = await QRCode.toDataURL(qrData);
+    await order.save();
+
     createAndEmitNotification({
-      receiver: req.user._id,
+      receiver: order.seller._id,
+      sender: req.user._id,
       type: "payment_completed",
       title: "Payment Successful",
       message: `Your payment of $${order.finalPrice} was successful. A QR code has been generated for delivery.`,
       relatedId: order._id,
     }).catch(() => {});
 
-    // Notify seller
     createAndEmitNotification({
-      receiver: order.seller?._id || order.seller,
       sender: req.user._id,
+      receiver: order.winner._id,
       type: "qr_generated",
       title: "QR Code Ready",
       message: `Payment received for your auction. A QR code has been generated for delivery confirmation.`,
       relatedId: order._id,
     }).catch(() => {});
 
-    return res.json({ message: "Payment successful", orderId: order._id, qrCode });
+    return res.status(200).json({ message: "Payment successful", order });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: "Payment error", error: error.message });
   }
 };
 
@@ -201,7 +184,57 @@ export const updateOrderStatus = async (req, res) => {
 
     order.orderStatus = orderStatus;
     if (orderStatus === "shipped") order.shippedAt = new Date();
-    if (orderStatus === "delivered") order.deliveredAt = new Date();
+    if (orderStatus === "delivered") {
+      order.deliveredAt = new Date();
+      if (!order.qrVerified) {
+        const adminUser = await (await import("../models/User.js")).default.findOne({ role: "admin" });
+        if (adminUser) {
+          const adminWallet = await ensureWalletForUser(adminUser._id);
+          if (adminWallet.escrowBalance >= order.finalPrice) {
+            adminWallet.escrowBalance -= order.finalPrice;
+            await adminWallet.save();
+            await WalletTransaction.create({
+              user: adminUser._id,
+              type: "escrow_release",
+              amount: order.finalPrice,
+              status: "completed",
+              description: `Escrow released for order #${order._id}`,
+              relatedOrder: order._id,
+            });
+
+            const sellerWalletId = order.seller?._id || order.seller;
+            const sellerWallet = await ensureWalletForUser(sellerWalletId);
+            sellerWallet.balance += order.finalPrice;
+            await sellerWallet.save();
+            await WalletTransaction.create({
+              user: sellerWalletId,
+              type: "deposit",
+              amount: order.finalPrice,
+              status: "completed",
+              description: `Payment received for order #${order._id}`,
+              relatedOrder: order._id,
+            });
+
+            // Mark the original pending holds as completed
+            if (order.auction) {
+              await WalletTransaction.updateMany(
+                { relatedAuction: order.auction, type: { $in: ["bid_lock", "escrow_hold"] }, status: "pending" },
+                { $set: { status: "completed" } }
+              );
+            }
+
+            createAndEmitNotification({
+              receiver: sellerWalletId,
+              type: "money_released",
+              title: "Payment Released",
+              message: `$${order.finalPrice} has been transferred to your wallet for order #${order._id?.toString().slice(-8).toUpperCase()}.`,
+              relatedId: order._id,
+            }).catch(() => {});
+          }
+        }
+        order.qrVerified = true; // Prevent double release
+      }
+    }
     await order.save();
 
     const statusMessages = {

@@ -4,7 +4,7 @@ import Bid from "../models/Bid.js";
 import Ticket from "../models/Ticket.js";
 import { createAndEmitNotification } from "./notification.js";
 import { ingestAuction } from "../AI/ingestAuctions.js";
-import { chargeWinningBid, unlockFunds } from "./walletController.js";
+import { unlockFunds } from "./walletController.js";
 
 // ─── Shared helper: expire an auction that has passed its endTime ─────────────
 // Returns the (possibly mutated) auction. Safe to call multiple times.
@@ -23,13 +23,9 @@ export async function maybeExpireAuction(auction) {
     const sellerId = auction.seller?._id || auction.seller;
     const productName = auction.Product?.name || "the item";
 
-    const winnerId = auction.highestBider?.toString();
     const winnerBid = allBids[0];
+    const winnerId = winnerBid.buyer.toString();
     const loserIds = [...new Set(allBids.slice(1).map(b => b.buyer.toString()))].filter(id => id !== winnerId);
-
-    if (winnerId) {
-      await chargeWinningBid(winnerId, winnerBid.amount, `Escrow locked for winning auction ${auction._id}`, auction._id);
-    }
 
     for (const loserId of loserIds) {
       const loserBidAmount = allBids.find(b => b.buyer.toString() === loserId)?.amount || 0;

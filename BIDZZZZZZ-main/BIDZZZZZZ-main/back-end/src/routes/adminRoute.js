@@ -4,6 +4,8 @@ import User from "../models/User.js";
 import Auction from "../models/Auctions.js";
 import Order from "../models/Order.js";
 import Bid from "../models/Bid.js";
+import Wallet from "../models/Wallet.js";
+import WalletTransaction from "../models/WalletTransaction.js";
 
 const router = express.Router();
 
@@ -161,6 +163,48 @@ router.patch("/orders/:id", async (req, res) => {
     const order = await Order.findByIdAndUpdate(req.params.id, update, { new: true });
     if (!order) return res.status(404).json({ message: "Order not found." });
     res.json({ order });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// 💰 Finances
+router.get("/finances", async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    
+    // Find system escrow totals (from Admin Wallet)
+    const adminWallet = await Wallet.findOne({ user: req.user._id });
+    const systemEscrowTotal = adminWallet ? adminWallet.escrowBalance : 0;
+
+    // We fetch transactions related to holds, locks, etc.
+    const filter = {
+      type: { $in: ["bid_lock", "escrow_hold", "order_charge", "escrow_release"] }
+    };
+
+    const [transactions, total, pendingAgg, completedAgg] = await Promise.all([
+      WalletTransaction.find(filter)
+        .populate("user", "fullName email")
+        .populate({ path: "relatedAuction", populate: { path: "Product", select: "name image" } })
+        .populate("relatedOrder", "orderStatus paymentStatus")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(Number(limit)),
+      WalletTransaction.countDocuments(filter),
+      WalletTransaction.aggregate([
+        { $match: { type: "escrow_hold", status: "pending" } },
+        { $group: { _id: null, sum: { $sum: "$amount" } } }
+      ]),
+      WalletTransaction.aggregate([
+        { $match: { type: "escrow_hold", status: "completed" } },
+        { $group: { _id: null, sum: { $sum: "$amount" } } }
+      ])
+    ]);
+    
+    const totalPending = pendingAgg.length > 0 ? pendingAgg[0].sum : 0;
+    const totalCompleted = completedAgg.length > 0 ? completedAgg[0].sum : 0;
+
+    res.json({ systemEscrowTotal, totalPending, totalCompleted, transactions, total, page: Number(page), pages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

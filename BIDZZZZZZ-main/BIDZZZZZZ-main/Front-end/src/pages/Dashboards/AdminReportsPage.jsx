@@ -119,7 +119,12 @@ export default function AdminReportsPage() {
                       <div style={{ fontSize: 11, color: "var(--ink-40)" }}>{r.reporter?.role}</div>
                     </td>
                     <td>
-                      <span className="badge badge-neutral" style={{ textTransform: "capitalize" }}>{r.targetType}</span>
+                      <div style={{ marginBottom: 4 }}>
+                        <span className="badge badge-neutral" style={{ textTransform: "capitalize" }}>{r.targetType}</span>
+                      </div>
+                      <div style={{ fontSize: 13, color: "var(--ink-40)" }}>
+                        {r.targetName || `ID: ${r.targetId}`}
+                      </div>
                     </td>
                     <td>{REASON_LABELS[r.reason] ?? r.reason}</td>
                     <td style={{ fontSize: 12 }}>{new Date(r.createdAt).toLocaleDateString()}</td>
@@ -153,8 +158,11 @@ export default function AdminReportsPage() {
               <div style={{ fontSize: 13, fontWeight: 500 }}>{selected.reporter?.fullName}</div>
             </div>
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 11, color: "var(--ink-40)", marginBottom: 4 }}>TARGET TYPE</div>
-              <span className="badge badge-neutral" style={{ textTransform: "capitalize" }}>{selected.targetType}</span>
+              <div style={{ fontSize: 11, color: "var(--ink-40)", marginBottom: 4 }}>TARGET</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span className="badge badge-neutral" style={{ textTransform: "capitalize" }}>{selected.targetType}</span>
+                <span style={{ fontSize: 14, fontWeight: 500, color: "var(--ink)" }}>{selected.targetName || `ID: ${selected.targetId}`}</span>
+              </div>
             </div>
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 11, color: "var(--ink-40)", marginBottom: 4 }}>REASON</div>

@@ -1,6 +1,8 @@
 import Report from "../models/Report.js";
 import User from "../models/User.js";
 import Auction from "../models/Auctions.js";
+import Product from "../models/Product.js";
+import Order from "../models/Order.js";
 import logger from "../Config/logger.js";
 
 export const submitReport = async (req, res) => {
@@ -9,12 +11,12 @@ export const submitReport = async (req, res) => {
     if (!targetType || !targetId || !reason)
       return res.status(400).json({ message: "targetType, targetId and reason are required." });
 
-    const allowedTargetTypes = ["user", "auction", "product"];
+    const allowedTargetTypes = ["seller", "buyer", "auction", "message", "order", "product"];
     if (!allowedTargetTypes.includes(targetType)) {
       return res.status(400).json({ message: `targetType must be one of: ${allowedTargetTypes.join(", ")}` });
     }
 
-    const allowedReasons = ["spam", "fraud", "fake_item", "inappropriate", "other"];
+    const allowedReasons = ["spam", "fraud", "fake_product", "abusive_language", "scam", "other"];
     if (!allowedReasons.includes(reason)) {
       return res.status(400).json({ message: `reason must be one of: ${allowedReasons.join(", ")}` });
     }
@@ -63,7 +65,7 @@ export const getAllReports = async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
     const filter = status ? { status } : {};
-    const [reports, total] = await Promise.all([
+    const [reportsRaw, total] = await Promise.all([
       Report.find(filter)
         .populate("reporter", "fullName email role")
         .populate("resolvedBy", "fullName")
@@ -72,6 +74,29 @@ export const getAllReports = async (req, res) => {
         .limit(Number(limit)),
       Report.countDocuments(filter),
     ]);
+
+    const reports = await Promise.all(reportsRaw.map(async (r) => {
+      const rep = r.toObject();
+      rep.targetName = "Unknown";
+      try {
+        if (r.targetType === "buyer" || r.targetType === "seller") {
+          const u = await User.findById(r.targetId).select("fullName");
+          if (u) rep.targetName = u.fullName;
+        } else if (r.targetType === "auction") {
+          const a = await Auction.findById(r.targetId).populate("Product", "name");
+          if (a && a.Product) rep.targetName = a.Product.name + " (Auction)";
+        } else if (r.targetType === "product") {
+          const p = await Product.findById(r.targetId).select("name");
+          if (p) rep.targetName = p.name;
+        } else if (r.targetType === "order") {
+          rep.targetName = `Order #${r.targetId}`;
+        }
+      } catch (e) {
+        // ignore fetch errors for invalid IDs
+      }
+      return rep;
+    }));
+
     res.json({ reports, total, page: Number(page), pages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ message: "Server error." });

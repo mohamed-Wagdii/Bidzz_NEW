@@ -131,6 +131,8 @@ export const adminAPI = {
   // Orders
   getOrders:   (params = {}) => api.get("/admin/orders",   { params }).then((r) => r.data),
   updateOrder: (id, data)    => api.patch(`/admin/orders/${id}`, data).then((r) => r.data),
+  // Finances
+  getFinances: (params = {}) => api.get("/admin/finances", { params }).then((r) => r.data),
 };
 
 export default api;

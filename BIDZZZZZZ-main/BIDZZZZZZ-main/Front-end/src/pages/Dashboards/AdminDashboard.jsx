@@ -44,11 +44,20 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  const monthlyData = (data?.monthlyRevenue || []).map(d => ({
-    month: MONTH_NAMES[(d._id?.month ?? 1) - 1],
-    revenue: d.revenue,
-    orders: d.count,
-  }));
+  // Pad monthly revenue for the last 6 months
+  const monthlyData = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const monthIndex = d.getMonth() + 1; // 1-12
+    const year = d.getFullYear();
+    const found = (data?.monthlyRevenue || []).find(m => m._id?.month === monthIndex && m._id?.year === year);
+    monthlyData.push({
+      month: MONTH_NAMES[monthIndex - 1],
+      revenue: found?.revenue ?? 0,
+      orders: found?.count ?? 0,
+    });
+  }
 
   const userPieData = [
     { name: "Buyers",  value: data?.totalBuyers  ?? 0 },

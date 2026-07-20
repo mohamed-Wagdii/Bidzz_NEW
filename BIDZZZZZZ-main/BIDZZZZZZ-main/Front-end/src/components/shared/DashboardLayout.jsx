@@ -58,7 +58,8 @@ const ADMIN_NAV = [
   { en: "Users",        ar: "المستخدمون",      path: "/admin/users",        icon: "watchlist" },
   { en: "Auctions",     ar: "المزادات",        path: "/admin/auctions",     icon: "auctions" },
   { en: "Orders",       ar: "الطلبات",         path: "/admin/orders",       icon: "orders" },
-  { en: "Reports",      ar: "البلاغات",        path: "/admin/reports",      icon: "bids" },
+  { en: "Reports",      ar: "التقارير",        path: "/admin/reports",      icon: "analytics" },
+  { en: "Wallet",       ar: "المحفظة",         path: "/admin/wallet",       icon: "wallet" },
   { en: "Analytics",    ar: "التحليلات",       path: "/analytics",          icon: "analytics" },
   { en: "Settings",     ar: "الإعدادات",       path: "/dashboard/settings", icon: "settings" },
 ];

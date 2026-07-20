@@ -28,6 +28,12 @@ export default function AuctionDetail() {
   const [bidSuccess, setBidSuccess] = useState("");
   const [timeLeft, setTimeLeft] = useState("");
   const [canChat, setCanChat] = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportDesc, setReportDesc] = useState("");
+  const [showReport, setShowReport] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState(false);
+  const [reportErrorMsg, setReportErrorMsg] = useState("");
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderError, setOrderError] = useState("");
   const expiredRef = useRef(false);
@@ -149,6 +155,26 @@ export default function AuctionDetail() {
   const isEnded = auction.status === "ended" || timeLeft === "Ended";
 
   // Winner check — compare strings
+  const handleReport = () => {
+    if (!reportReason) {
+      setReportErrorMsg("Please select a reason.");
+      return;
+    }
+    setReportLoading(true);
+    setReportErrorMsg("");
+    setReportSuccess(false);
+    
+    reportsAPI.submit({ targetType: "auction", targetId: id, reason: reportReason, description: reportDesc })
+      .then(() => { 
+        setReportSuccess(true);
+        setReportReason("");
+        setReportDesc("");
+        setTimeout(() => { setShowReport(false); setReportSuccess(false); }, 3000);
+      })
+      .catch(e => setReportErrorMsg(e.response?.data?.message || "Failed to submit report."))
+      .finally(() => setReportLoading(false));
+  };
+
   const highestBiderId = auction.highestBider?._id?.toString() || auction.highestBider?.toString() || "";
   const isWinner = isEnded && uid && highestBiderId && uid === highestBiderId;
 
@@ -217,9 +243,43 @@ export default function AuctionDetail() {
               <h1 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 26, fontWeight: 700, marginBottom: 8, lineHeight: 1.2 }}>
                 {auction.Product?.name ?? "Auction Item"}
               </h1>
-              <p style={{ fontSize: 13, color: "#999", marginBottom: 24 }}>
-                Seller: {auction.seller?.fullName ?? "Unknown"}
-              </p>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+                <p style={{ fontSize: 13, color: "#999", margin: 0 }}>
+                  Seller: {auction.seller?.fullName ?? "Unknown"}
+                </p>
+                {user && !isSeller && (
+                  <button onClick={() => setShowReport(!showReport)} style={{ background: "none", border: "none", color: "#e05252", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>
+                    Report
+                  </button>
+                )}
+              </div>
+
+              {showReport && user && !isSeller && (
+                <div style={{ background: "#fff0f0", border: "1px solid #fca5a5", borderRadius: 8, padding: 12, marginBottom: 16 }}>
+                  <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 600, color: "#e05252" }}>Report this Auction</p>
+                  
+                  {reportSuccess && <p style={{ color: "#1a9e5a", fontSize: 13, marginBottom: 12, background: "#e6f9f0", padding: "8px 12px", borderRadius: 6 }}>Report submitted successfully! Thank you.</p>}
+                  {reportErrorMsg && <p style={{ color: "#e05252", fontSize: 13, marginBottom: 12, background: "rgba(255,255,255,0.6)", borderRadius: 4, padding: "4px 8px" }}>{reportErrorMsg}</p>}
+                  
+                  {!reportSuccess && (
+                    <>
+                      <select value={reportReason} onChange={e => setReportReason(e.target.value)} style={{ width: "100%", padding: 8, marginBottom: 8, borderRadius: 4, border: "1px solid #fca5a5", outline: "none" }}>
+                        <option value="">Select Reason</option>
+                        <option value="fraud">Fraud</option>
+                        <option value="fake_product">Fake Product</option>
+                        <option value="spam">Spam</option>
+                        <option value="scam">Scam</option>
+                        <option value="other">Other</option>
+                      </select>
+                      <textarea placeholder="Description (optional)" value={reportDesc} onChange={e => setReportDesc(e.target.value)} style={{ width: "100%", padding: 8, marginBottom: 8, borderRadius: 4, border: "1px solid #fca5a5", minHeight: 60, outline: "none" }} />
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={handleReport} disabled={reportLoading} style={{ background: "#e05252", color: "#fff", border: "none", padding: "6px 16px", borderRadius: 4, cursor: reportLoading ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600 }}>{reportLoading ? "Submitting..." : "Submit"}</button>
+                        <button onClick={() => { setShowReport(false); setReportErrorMsg(""); setReportSuccess(false); }} style={{ background: "transparent", color: "#555", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 500 }}>Cancel</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24 }}>
                 <div>

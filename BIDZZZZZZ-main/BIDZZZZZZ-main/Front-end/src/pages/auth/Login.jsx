@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { usePageTitle } from "../../hooks/usePageTitle";
 import { Link, useNavigate } from "react-router-dom";
 import { authAPI } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { GoogleLogin } from "@react-oauth/google";
-import FacebookLogin from "@greatsumini/react-facebook-login";
+import * as _FBLoginModule from "@greatsumini/react-facebook-login";
+const FacebookLogin = _FBLoginModule.default?.default ?? _FBLoginModule.default ?? _FBLoginModule;
 
 
 
@@ -52,6 +54,7 @@ export default function Login() {
   const { login } = useAuth();
   const { lang, toggleLang } = useTheme();
   const t = TEXT[lang] || TEXT.en;
+  usePageTitle("Sign In");
   const isRTL = lang === "ar";
 
   const [form, setForm]         = useState({ email: "", password: "" });
@@ -139,7 +142,7 @@ export default function Login() {
           </div>
 
           {/* Body */}
-          <div style={{ padding: "24px 28px" }}>
+          <div style={{ padding: "64px 48px", minHeight: "450px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
             {error && (
               <div style={{
                 background: "#fef2f2", border: "1px solid #fca5a5",
@@ -212,12 +215,16 @@ export default function Login() {
               <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ display: "flex", justifyContent: "center" }}>
+            <div style={{ display: "flex", flexDirection: "row", justifyContent: "center", gap: 16 }}>
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", width: 48, height: 48 }}>
                 <GoogleLogin
                   onSuccess={(res) => handleOAuthSuccess("google", res.credential)}
                   onError={() => setError(t.errGeneral)}
                   useOneTap
+                  type="icon"
+                  shape="circle"
+                  theme="filled_black"
+                  size="large"
                 />
               </div>
               <FacebookLogin
@@ -226,15 +233,14 @@ export default function Login() {
                 onFail={() => setError(t.errGeneral)}
                 onProfileSuccess={() => {}}
                 style={{
-                  width: "100%", padding: "10px", background: "#1877F2",
-                  color: "#fff", border: "none", borderRadius: 4,
-                  fontSize: 14, fontWeight: 700, cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  height: 40
+                  width: 48, height: 48, background: "#f9fafb",
+                  border: "1px solid #e5e7eb", borderRadius: "50%",
+                  cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  transition: "background 0.2s"
                 }}
               >
-                <span style={{ fontSize: 18, background: "#fff", color: "#1877f2", borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center" }}>f</span>
-                Continue with Facebook
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" alt="Facebook" style={{ width: 24, height: 24 }} />
               </FacebookLogin>
             </div>
           </div>
@@ -260,8 +266,8 @@ const logo    = { fontWeight: 800, fontSize: 22, letterSpacing: 1, textDecoratio
 const langBtn = { background: "none", border: "1px solid #e5e7eb", borderRadius: 20, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#555" };
 const wrapper = { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 16px", gap: 20 };
 
-const card    = { width: "100%", maxWidth: 480, background: "#fff", borderRadius: 16, boxShadow: "0 4px 24px rgba(0,0,0,0.08)", overflow: "hidden" };
-const cardHeader = { background: "linear-gradient(135deg,#0d1117,#1e2a3a)", padding: "24px 28px", textAlign: "center" };
-const fieldLabel = { display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 };
-const inputWrap  = { display: "flex", alignItems: "center", border: "1.5px solid #e5e7eb", borderRadius: 8, background: "#f9fafb", overflow: "hidden" };
-const inputStyle = { flex: 1, border: "none", background: "transparent", padding: "11px 8px", fontSize: 14, outline: "none", color: "#111", fontFamily: "inherit" };
+const card    = { width: "100%", maxWidth: 600, minHeight: 600, background: "#fff", borderRadius: 16, boxShadow: "0 4px 24px rgba(0,0,0,0.08)", overflow: "hidden" };
+const cardHeader = { background: "linear-gradient(135deg,#0d1117,#1e2a3a)", padding: "32px 28px", textAlign: "center" };
+const fieldLabel = { display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 8 };
+const inputWrap  = { display: "flex", alignItems: "center", border: "1.5px solid #e5e7eb", borderRadius: 10, background: "#f9fafb", overflow: "hidden" };
+const inputStyle = { flex: 1, border: "none", background: "transparent", padding: "14px 12px", fontSize: 15, outline: "none", color: "#111", fontFamily: "inherit" };
