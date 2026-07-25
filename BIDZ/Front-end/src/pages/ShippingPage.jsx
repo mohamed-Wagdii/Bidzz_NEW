@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import ShippingAddressForm from "../components/Shipping/ShippingAddressForm";
-import OrderSummarySidebar from "../components/Shipping/OrderSummarySidebar";
+import ShippingAddressForm from "../components/shipping/ShippingAddressForm";
+import OrderSummarySidebar from "../components/shipping/OrderSummarySidebar";
 
 // الصفحة دي بس بتنادي الـ components + بتدير الـ local form state
 // الداتا الأساسية (product, costs) هتيجي من الباك اند
