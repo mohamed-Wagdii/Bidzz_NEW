@@ -15,7 +15,7 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post("/api/auth/reset-password", { token: params.get("token"), password });
+      await axios.post(`${import.meta.env.VITE_API_URL || ""}/api/auth/reset-password`, { token: params.get("token"), password });
       setMessage("Password reset successful. Redirecting to login...");
       setTimeout(() => navigate("/login"), 1200);
     } catch (err) {

@@ -14,7 +14,7 @@ export default function QRDeliveryPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const { data } = await axios.get(`/api/orders/${id}/delivery`, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
+        const { data } = await axios.get(`${import.meta.env.VITE_API_URL || ""}/api/orders/${id}/delivery`, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
         setOrder(data.order);
         setQrCode(data.qrCode);
       } catch {

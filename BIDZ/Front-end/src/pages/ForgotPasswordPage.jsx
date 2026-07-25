@@ -11,7 +11,7 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post("/api/auth/forgot-password", { email });
+      await axios.post(`${import.meta.env.VITE_API_URL || ""}/api/auth/forgot-password`, { email });
       setMessage("If the account exists, a reset link has been sent.");
     } catch (err) {
       setMessage(err.response?.data?.message || "Request failed");

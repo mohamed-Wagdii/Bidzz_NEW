@@ -7,7 +7,7 @@ import { io } from "socket.io-client";
 
 let _socket = null;
 function getSocket() {
-  if (!_socket) _socket = io(window.location.origin, { transports: ["websocket"] });
+  if (!_socket) _socket = io(import.meta.env.VITE_API_URL || window.location.origin, { transports: ["websocket"] });
   return _socket;
 }
 
