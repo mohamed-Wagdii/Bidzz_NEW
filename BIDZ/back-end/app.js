@@ -134,5 +134,8 @@ const tryListen = (port) => {
   });
   server.listen(port, () => logger.info(`Server running on http://localhost:${port}`));
 };
+if (process.env.NODE_ENV !== "production") {
+  tryListen(basePort);
+}
 
-tryListen(basePort);
+export default app;
