@@ -1,0 +1,42 @@
+services:
+  backend:
+    build:
+      context: ./back-end
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/bidzone
+    depends_on:
+      - mongo
+    restart: unless-stopped
+    networks:
+      - Biddzz-network
+
+  frontend:
+    build:
+      context: ./Front-end
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - Biddzz-network
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+    networks:
+      - Biddzz-network
+
+networks:
+  Biddzz-network:
+
+volumes:
+  mongo-data:
