@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { notificationsAPI } from "../../services/api";
@@ -37,7 +37,7 @@ export default function Navbar() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const { user }  = useAuth();
-  const { dark, toggleDark, lang, toggleLang } = useTheme();
+  const { dark, toggleDark, lang, toggleLang, isRTL } = useTheme();
   const [notifications, setNotifications] = useState([]);
   const [showDrop, setShowDrop] = useState(false);
   const dropRef = useRef(null);
@@ -123,13 +123,12 @@ export default function Navbar() {
     }}>
 
       {/* Logo */}
-      <div
-        onClick={() => navigate(user ? dashPath : "/")}
-        style={{ display: "flex", alignItems: "center", cursor: "pointer", userSelect: "none" }}
-      >
-        <span style={{ color: "var(--ink)", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, letterSpacing: 1 }}>BID</span>
-        <span style={{ color: "var(--gold)", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, letterSpacing: 1 }}>ZONE</span>
-      </div>
+      <Link to="/" style={{ textDecoration: "none", ...(!isRTL ? { marginRight: 32 } : { marginLeft: 32 }) }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 34, height: 34, borderRadius: "10px", background: "linear-gradient(135deg, #111, #333)", color: "var(--gold)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16 }}>BZ</div>
+          <span style={{ fontSize: 22, fontWeight: 900, fontFamily: "var(--font-display)", letterSpacing: 1, color: "#111" }}>BID<span style={{ color: "var(--gold)" }}>ZONE</span></span>
+        </div>
+      </Link>
 
       {/* Center nav links */}
       <div style={{ display: "flex", gap: 28 }}>

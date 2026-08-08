@@ -2,6 +2,11 @@ import Wallet from "../models/Wallet.js";
 import WalletTransaction from "../models/WalletTransaction.js";
 import User from "../models/User.js";
 
+/**
+ * Ensure Wallet For User
+ * Checks if a user has a wallet, and if not, creates a new one with zero balances.
+ * Returns the user's wallet document.
+ */
 export const ensureWalletForUser = async (userId) => {
   let wallet = await Wallet.findOne({ user: userId });
   if (!wallet) {
@@ -10,10 +15,18 @@ export const ensureWalletForUser = async (userId) => {
   return wallet;
 };
 
+/**
+ * Log Transaction
+ * Creates and saves a new wallet transaction record in the database for auditing and history.
+ */
 const logTransaction = async ({ user, type, amount, status = "completed", description, relatedAuction = null, relatedOrder = null }) => {
   return WalletTransaction.create({ user, type, amount, status, description, relatedAuction, relatedOrder });
 };
 
+/**
+ * Get Wallet
+ * Retrieves the wallet for the currently authenticated user.
+ */
 export const getWallet = async (req, res) => {
   try {
     const wallet = await ensureWalletForUser(req.user._id);
@@ -23,6 +36,11 @@ export const getWallet = async (req, res) => {
   }
 };
 
+/**
+ * Add Balance (Deposit)
+ * Processes a deposit into the user's wallet, validating the amount is positive and under $10,000.
+ * Logs the transaction as a deposit upon success.
+ */
 export const addBalance = async (req, res) => {
   try {
     const value = parseFloat(req.body.amount);
@@ -45,6 +63,11 @@ export const addBalance = async (req, res) => {
   }
 };
 
+/**
+ * Withdraw Balance
+ * Allows a user to withdraw funds from their wallet if they have sufficient balance.
+ * Logs the transaction as a withdrawal upon success.
+ */
 export const withdrawBalance = async (req, res) => {
   try {
     const value = parseFloat(req.body.amount);
@@ -67,6 +90,10 @@ export const withdrawBalance = async (req, res) => {
   }
 };
 
+/**
+ * Get Transactions
+ * Retrieves the transaction history for the authenticated user's wallet, sorted by most recent.
+ */
 export const getTransactions = async (req, res) => {
   try {
     const transactions = await WalletTransaction.find({ user: req.user._id }).sort({ createdAt: -1 });
@@ -76,6 +103,11 @@ export const getTransactions = async (req, res) => {
   }
 };
 
+/**
+ * Lock Funds
+ * Deducts the specified amount from the buyer's wallet and places it into the admin's escrow balance.
+ * This is typically used when a user places a bid or makes an order.
+ */
 export const lockFunds = async (userId, amount, description, relatedAuction = null) => {
   const buyerWallet = await ensureWalletForUser(userId);
   if (buyerWallet.balance < amount) throw new Error("Insufficient balance to lock funds");
@@ -93,6 +125,11 @@ export const lockFunds = async (userId, amount, description, relatedAuction = nu
   await logTransaction({ user: adminUser._id, type: "escrow_hold", amount, status: "pending", description: `Escrow hold for ${description}`, relatedAuction });
 };
 
+/**
+ * Unlock Funds
+ * Reverses a fund lock by deducting the amount from the admin escrow and adding it back to the buyer's wallet.
+ * Also marks the pending escrow transactions as failed to indicate the release.
+ */
 export const unlockFunds = async (userId, amount, description, relatedAuction = null) => {
   const adminUser = await User.findOne({ role: "admin" });
   if (!adminUser) throw new Error("Admin account not found");

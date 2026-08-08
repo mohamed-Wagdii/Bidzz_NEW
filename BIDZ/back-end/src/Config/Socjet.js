@@ -41,11 +41,11 @@ export const initSocket = (server) => {
           return socket.emit("error", "Auction not found");
         }
 
-        // ✅ صاحب المزاد
+        // ✅ Auction Owner
         const isOwner =
           auction.seller.toString() === userId;
 
-        // ✅ مشارك في المزاد
+        // ✅ Auction Participant
         const isParticipant = auction.participants?.some(
           (p) => p.toString() === userId
         );

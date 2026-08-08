@@ -8,13 +8,35 @@ import Order from "../models/Order.js";
 
 const router = express.Router();
 
+/**
+ * POST /create/:auctionId
+ * Creates an order after an auction is won.
+ */
 router.post("/create/:auctionId", authMiddleware, createOrder);
+
+/**
+ * POST /:id/pay
+ * Processes order payment using the user's wallet balance.
+ */
 router.post("/:id/pay", authMiddleware, payWithWallet);
+
+/**
+ * GET /success
+ * Redirect URL for successful payments.
+ */
 router.get("/success", paymentSuccess);
+
+/**
+ * GET /cancel
+ * Redirect URL for cancelled payments.
+ */
 router.get("/cancel", paymentCancel);
 
 // ── Stripe ────────────────────────────────────────────────────────────────────
-// POST /api/orders/:id/pay/stripe  — creates a PaymentIntent, returns clientSecret to front-end
+/**
+ * POST /:id/pay/stripe
+ * Creates a Stripe PaymentIntent for the specified order and returns the clientSecret to the front-end.
+ */
 router.post("/:id/pay/stripe", authMiddleware, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -35,7 +57,11 @@ router.post("/:id/pay/stripe", authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/orders/stripe/webhook  — called by Stripe; raw body is required (set up in app.js)
+/**
+ * POST /stripe/webhook
+ * Webhook endpoint called by Stripe. Validates the signature and updates the order status to paid upon success.
+ * Note: Raw body is required and must be configured in app.js.
+ */
 router.post("/stripe/webhook", async (req, res) => {
   const sig = req.headers["stripe-signature"];
   if (!sig) return res.status(400).json({ message: "Missing stripe-signature header" });
@@ -62,7 +88,10 @@ router.post("/stripe/webhook", async (req, res) => {
 });
 
 // ── STAMMP ────────────────────────────────────────────────────────────────────
-// POST /api/orders/:id/pay/stammp  — initiates STAMMP payment, returns paymentUrl
+/**
+ * POST /:id/pay/stammp
+ * Initiates a STAMMP payment for the specified order and returns the paymentUrl.
+ */
 router.post("/:id/pay/stammp", authMiddleware, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -83,7 +112,10 @@ router.post("/:id/pay/stammp", authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/orders/stammp/webhook  — callback from STAMMP after payment
+/**
+ * POST /stammp/webhook
+ * Webhook callback from STAMMP after payment. Verifies the callback and updates the order status.
+ */
 router.post("/stammp/webhook", async (req, res) => {
   try {
     const { orderId, paid } = verifyStammpCallback(req.body);
@@ -100,7 +132,10 @@ router.post("/stammp/webhook", async (req, res) => {
   }
 });
 
-// GET /api/orders/my
+/**
+ * GET /my
+ * Retrieves all orders where the currently authenticated user is either the winner (buyer) or the seller.
+ */
 router.get("/my", authMiddleware, async (req, res) => {
   try {
     const orders = await Order.find({
@@ -116,15 +151,35 @@ router.get("/my", authMiddleware, async (req, res) => {
   }
 });
 
-// PATCH /api/orders/:id/shipping
+/**
+ * PATCH /:id/shipping
+ * Updates the shipping details for a specific order.
+ */
 router.patch("/:id/shipping", authMiddleware, updateShipping);
 
-// PATCH /api/orders/:id/status
+/**
+ * PATCH /:id/status
+ * Updates the status of an order (e.g., shipped, delivered).
+ */
 router.patch("/:id/status", authMiddleware, updateOrderStatus);
+
+/**
+ * GET /:id/delivery
+ * Retrieves delivery-related data for a specific order.
+ */
 router.get("/:id/delivery", authMiddleware, getDeliveryData);
+
+/**
+ * POST /verify-delivery
+ * Verifies a delivery QR code to confirm order delivery.
+ */
 router.post("/verify-delivery", authMiddleware, verifyDeliveryQr);
 
-// GET /api/orders/:id
+/**
+ * GET /:id
+ * Retrieves detailed information for a specific order.
+ * Ensures that only the authorized buyer or seller can access the order data.
+ */
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
@@ -137,7 +192,7 @@ router.get("/:id", authMiddleware, async (req, res) => {
     const uid = req.user._id.toString();
     const winnerId = order.winner?._id?.toString() || order.winner?.toString();
     const sellerId = order.seller?._id?.toString() || order.seller?.toString();
-    if (winnerId !== uid && sellerId !== uid) {
+    if (winnerId !== uid && sellerId !== uid && req.user.role !== "admin") {
       return res.status(403).json({ message: "Not authorized" });
     }
 

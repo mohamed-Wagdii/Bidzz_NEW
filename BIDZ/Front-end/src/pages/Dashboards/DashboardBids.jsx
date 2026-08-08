@@ -50,7 +50,7 @@ export default function DashboardBids() {
         });
         setBids(mapped);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, [user]);
 

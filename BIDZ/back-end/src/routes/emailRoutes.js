@@ -4,6 +4,10 @@ import sendEmail from "../sendEmail/sendEmail.js";
 const router = express.Router();
 
 // POST /api/email/send
+/**
+ * POST /send
+ * API endpoint to send a generic email. Expects recipient email (to), subject, and plain text content in the body.
+ */
 router.post("/send", async (req, res) => {
   try {
     const { to, subject, text } = req.body;

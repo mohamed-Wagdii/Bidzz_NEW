@@ -26,6 +26,7 @@ import notificationRoute from "./src/routes/notification.js";
 import walletRoute from "./src/routes/walletRoute.js";
 import reportRoute from "./src/routes/reportRoute.js";
 import adminRoute from "./src/routes/adminRoute.js";
+import analysisRoute from "./src/routes/analysisRoute.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -100,6 +101,7 @@ app.use("/api/notifications", notificationRoute);
 app.use("/api/wallet", walletRoute);
 app.use("/api/reports", reportRoute);
 app.use("/api/admin", adminRoute);
+app.use("/api/analysis", analysisRoute);
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get("/health", (req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));

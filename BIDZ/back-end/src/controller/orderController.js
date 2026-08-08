@@ -8,7 +8,11 @@ import { maybeExpireAuction } from "./auctionController.js";
 import { ensureWalletForUser } from "./walletController.js";
 import QRCode from "qrcode";
 
-// POST /api/orders/create/:auctionId
+/**
+ * Create Order
+ * Initializes an order for an ended auction where the current user is the highest bidder.
+ * Checks for existing orders and validates the auction state before creation.
+ */
 export const createOrder = async (req, res) => {
   try {
     const { auctionId } = req.params;
@@ -69,7 +73,11 @@ export const createOrder = async (req, res) => {
   }
 };
 
-// POST /api/orders/:id/pay  — wallet payment
+/**
+ * Pay With Wallet
+ * Processes the payment for an order using funds already held in the admin escrow.
+ * Generates a delivery QR code and notifies the seller that payment is complete.
+ */
 export const payWithWallet = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate("auction winner seller");
@@ -135,7 +143,10 @@ export const payWithWallet = async (req, res) => {
   }
 };
 
-// PATCH /api/orders/:id/shipping
+/**
+ * Update Shipping
+ * Allows the winning buyer to set or update the shipping address for their order.
+ */
 export const updateShipping = async (req, res) => {
   try {
     const { shippingAddress, shippingDetails } = req.body;
@@ -160,7 +171,11 @@ export const updateShipping = async (req, res) => {
   }
 };
 
-// PATCH /api/orders/:id/status
+/**
+ * Update Order Status
+ * Allows the seller (or admin) to update the status of an order (e.g., shipped, delivered).
+ * Automatically releases escrow funds if the status is manually set to delivered.
+ */
 export const updateOrderStatus = async (req, res) => {
   try {
     const { orderStatus } = req.body;
@@ -260,5 +275,14 @@ export const updateOrderStatus = async (req, res) => {
 };
 
 // Legacy stubs — kept so existing routes don't break
+/**
+ * Payment Success (Legacy)
+ * Redirects the user to the orders dashboard upon a successful external payment.
+ */
 export const paymentSuccess = async (req, res) => res.redirect(`${process.env.FRONTEND_URL || "http://localhost:5173"}/dashboard/orders`);
+
+/**
+ * Payment Cancel (Legacy)
+ * Redirects the user to the orders dashboard if an external payment is cancelled.
+ */
 export const paymentCancel  = async (req, res) => res.redirect(`${process.env.FRONTEND_URL || "http://localhost:5173"}/dashboard/orders`);

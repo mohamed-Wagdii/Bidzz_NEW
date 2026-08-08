@@ -5,6 +5,11 @@ function sanitizeString(str) {
   return String(str).replace(/<[^>]*>/g, "").trim();
 }
 
+/**
+ * Create Product
+ * Allows a seller to create a new product. Validates inputs, sanitizes text to prevent XSS,
+ * and handles the upload of associated product images.
+ */
 export const createProduct = async (req, res) => {
   try {
     if (req.user.role !== "seller") {

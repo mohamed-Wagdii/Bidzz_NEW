@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import ShippingAddressForm from "../components/shipping/ShippingAddressForm";
 import OrderSummarySidebar from "../components/shipping/OrderSummarySidebar";
 
-// الصفحة دي بس بتنادي الـ components + بتدير الـ local form state
-// الداتا الأساسية (product, costs) هتيجي من الباك اند
+// This page only renders components and manages local form state
+// The primary data (product, costs) will come from the backend
 export default function Shipping() {
-  // TODO: fetch من /api/orders/:id/shipping
+  // TODO: fetch from /api/orders/:id/shipping
   const product = null;
   const costs = null;
   const shippingMethods = [];
@@ -28,7 +28,7 @@ export default function Shipping() {
   };
 
   const handleProceed = () => {
-    // TODO: call API لحفظ الشحن، وبعدها navigate لصفحة Payment
+    // TODO: call API to save shipping details, then navigate to Payment page
   };
 
   return (

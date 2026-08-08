@@ -7,6 +7,10 @@ import { createAndEmitNotification } from "./notification.js";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
+/**
+ * Has Bid Access
+ * Helper function to determine if a user is either the seller or a bidder in a specific auction.
+ */
 const hasBidAccess = async (userId, auctionId) => {
   const auction = await Auction.findById(auctionId);
   if (!auction) return false;
@@ -15,7 +19,10 @@ const hasBidAccess = async (userId, auctionId) => {
   return isSeller || isBidder;
 };
 
-// ── GET /api/chat/can-chat?auctionId=... ──────────────────────────────────────
+/**
+ * Can Chat
+ * Endpoint to check if the current user has access to initiate a chat regarding a specific auction.
+ */
 export const canChat = async (req, res) => {
   try {
     const { auctionId } = req.query;
@@ -27,9 +34,11 @@ export const canChat = async (req, res) => {
   }
 };
 
-// ── POST /api/chat/conversation ───────────────────────────────────────────────
-// Find or create a conversation between two users (optionally tied to an auction)
-// Returns the conversation immediately so the frontend can navigate to it
+/**
+ * Find Or Create Conversation
+ * Finds an existing conversation between the sender and receiver. If one doesn't exist,
+ * it verifies their access and creates a new conversation, notifying the receiver.
+ */
 export const findOrCreateConversation = async (req, res) => {
   try {
     const { receiverId, auctionId } = req.body;
@@ -91,7 +100,11 @@ export const findOrCreateConversation = async (req, res) => {
   }
 };
 
-// ── GET /api/chat/conversations ───────────────────────────────────────────────
+/**
+ * Get Conversations
+ * Retrieves all conversations involving the authenticated user, including the last message
+ * and unread counts, sorted by the most recently updated.
+ */
 export const getConversations = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -124,7 +137,11 @@ export const getConversations = async (req, res) => {
   }
 };
 
-// ── GET /api/chat/:conversationId/messages ────────────────────────────────────
+/**
+ * Get Messages
+ * Retrieves all messages for a given conversation. Marks any unread messages as read
+ * and notifies the other participant via WebSockets.
+ */
 export const getMessages = async (req, res) => {
   try {
     const { conversationId } = req.params;
@@ -165,7 +182,11 @@ export const getMessages = async (req, res) => {
   }
 };
 
-// ── POST /api/chat/send ───────────────────────────────────────────────────────
+/**
+ * Send Message
+ * Sends a new message in a conversation. Creates the conversation if it doesn't already exist.
+ * Emits the new message to both participants via WebSockets and sends a notification.
+ */
 export const sendMessage = async (req, res) => {
   try {
     const { conversationId, receiverId, message, auctionId } = req.body;
@@ -248,7 +269,10 @@ export const sendMessage = async (req, res) => {
   }
 };
 
-// ── POST /api/chat/:conversationId/typing ─────────────────────────────────────
+/**
+ * Send Typing
+ * Emits a typing indicator via WebSockets to the other participant in the conversation.
+ */
 export const sendTyping = async (req, res) => {
   try {
     const { conversationId } = req.params;

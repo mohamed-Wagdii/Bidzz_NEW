@@ -4,6 +4,14 @@ import { createAndEmitNotification } from "./notification.js";
 import { maybeExpireAuction } from "./auctionController.js";
 import { ensureWalletForUser, lockFunds, unlockFunds } from "./walletController.js";
 
+/**
+ * Place a new bid
+ * - Receives the bid amount and the auction ID.
+ * - Checks if the auction is active and that the user is not bidding on their own auction.
+ * - Validates that the bid is higher than the current price.
+ * - Locks the funds from the buyer's wallet and unlocks funds for the previous highest bidder if one exists.
+ * - Sends notifications to the seller and the previous bidder (if outbid).
+ */
 export const placeBid = async (req, res) => {
   try {
     const { auctionId } = req.params;
@@ -64,7 +72,7 @@ export const placeBid = async (req, res) => {
       title: "New Bid Placed",
       message: `${req.user.fullName} placed a bid of $${amount} on your auction.`,
       relatedId: auction._id,
-    }).catch(() => {});
+    }).catch(() => { });
 
     // Notify previous highest bidder they've been outbid
     if (highestBid && highestBid.buyer.toString() !== req.user._id.toString()) {
@@ -75,7 +83,7 @@ export const placeBid = async (req, res) => {
         title: "You've Been Outbid!",
         message: `Someone placed a higher bid of $${amount} on "${auction.Product?.name}". Bid again to stay in the lead!`,
         relatedId: auction._id,
-      }).catch(() => {});
+      }).catch(() => { });
     }
 
     res.status(201).json({ message: "Bid placed successfully", bid });
@@ -84,6 +92,12 @@ export const placeBid = async (req, res) => {
   }
 };
 
+/**
+ * Retrieve all bids for a specific auction
+ * - Receives the auction ID.
+ * - Returns a list of all bids placed on it, sorted from highest to lowest.
+ * - Includes the bidder's information (name and email).
+ */
 export const getBidsForAuction = async (req, res) => {
   try {
     const { auctionId } = req.params;
@@ -96,6 +110,12 @@ export const getBidsForAuction = async (req, res) => {
   }
 };
 
+/**
+ * Retrieve all bids for the current user (My Bids)
+ * - Uses the user's Token to identify them (req.user._id).
+ * - Returns all bids placed by the user across any auction, sorted by newest.
+ * - Includes auction and product details (name and image) with each bid to be displayed in the Dashboard.
+ */
 export const getMyBids = async (req, res) => {
   try {
     const bids = await Bid.find({ buyer: req.user._id })

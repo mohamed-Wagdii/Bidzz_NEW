@@ -11,6 +11,7 @@ import AuctionsPage from "./pages/Auctions/AuctionsPage";
 import AuctionDetail from "./pages/Auctions/AuctionDetail";
 import HowItWorksPage from "./pages/HowItWorksPage";
 import About from "./pages/About";
+import ProjectsPage from "./pages/ProjectsPage";
 
 // Buyer pages
 import BuyerDashboard from "./pages/Dashboards/BuyerDashboard";
@@ -73,6 +74,7 @@ export default function App() {
           <Route path="/auctions/:id" element={<AuctionDetail />} />
           <Route path="/how-it-works" element={<HowItWorksPage />} />
           <Route path="/about" element={<About />} />
+          <Route path="/projects" element={<ProjectsPage />} />
 
           {/* ── Dashboard redirect ── */}
           <Route path="/dashboard" element={<DashboardRedirect />} />

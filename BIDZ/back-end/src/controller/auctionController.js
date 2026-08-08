@@ -6,8 +6,13 @@ import { createAndEmitNotification } from "./notification.js";
 import { ingestAuction } from "../AI/ingestAuctions.js";
 import { unlockFunds } from "./walletController.js";
 
-// ─── Shared helper: expire an auction that has passed its endTime ─────────────
-// Returns the (possibly mutated) auction. Safe to call multiple times.
+/**
+ * Maybe Expire Auction
+ * Shared helper function to evaluate if an auction has passed its end time.
+ * If expired, it updates the status to 'ended', handles fund unlocking for losing bidders,
+ * and emits appropriate notifications to the winner and losers.
+ * Safe to call multiple times as it acts idempotently based on current state.
+ */
 export async function maybeExpireAuction(auction) {
   if (auction.status !== "active") return auction;
   if (new Date(auction.endTime) > new Date()) return auction;
@@ -58,7 +63,12 @@ export async function maybeExpireAuction(auction) {
   return auction;
 }
 
-// ─── Create auction ───────────────────────────────────────────────────────────
+/**
+ * Create Auction
+ * Handles the creation of a new auction by a seller.
+ * Validates the required inputs, ensures the seller possesses an unused ticket,
+ * marks the ticket as used, and kicks off async background processing for RAG ingestion.
+ */
 export const createAuction = async (req, res) => {
   try {
     const { productId, startingPrice, endTime, ticketId } = req.body;
@@ -113,7 +123,11 @@ export const createAuction = async (req, res) => {
   }
 };
 
-// ─── Get all active auctions (auto-expire stale ones first) ──────────────────
+/**
+ * Get All Auctions
+ * Retrieves all active auctions across the platform.
+ * As a side effect, auto-expires any active auctions whose end time has already passed.
+ */
 export const getAllAuctions = async (req, res) => {
   try {
     // Auto-expire any active auctions whose endTime has passed
@@ -134,7 +148,11 @@ export const getAllAuctions = async (req, res) => {
   }
 };
 
-// ─── Get auction by ID (auto-expire if needed) ────────────────────────────────
+/**
+ * Get Auction By Id
+ * Retrieves the full details of a specific auction by its ID.
+ * Auto-expires the auction before returning if its time has elapsed.
+ */
 export const getAuctionById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -155,7 +173,11 @@ export const getAuctionById = async (req, res) => {
   }
 };
 
-// ─── Update auction ───────────────────────────────────────────────────────────
+/**
+ * Update Auctions
+ * Allows a seller or admin to update the start time, end time, and starting price
+ * of an auction, provided the auction is in a valid state (pending or active).
+ */
 export const updateAuctions = async (req, res) => {
   try {
     const { id } = req.params;
@@ -200,7 +222,10 @@ export const updateAuctions = async (req, res) => {
   }
 };
 
-// ─── Delete auction ───────────────────────────────────────────────────────────
+/**
+ * Delete Auction
+ * Deletes an auction completely. Restricted to the auction's seller or platform admins.
+ */
 export const deleteAuction = async (req, res) => {
   try {
     const { id } = req.params;
@@ -216,7 +241,11 @@ export const deleteAuction = async (req, res) => {
   }
 };
 
-// ─── End auction manually (seller / admin) ────────────────────────────────────
+/**
+ * End Auction
+ * Manually forces an auction to end, bypassing the scheduled end time.
+ * Evaluates the final bids and notifies participants. Restricted to the seller or admins.
+ */
 export const endAuction = async (req, res) => {
   try {
     const { id } = req.params;
@@ -273,7 +302,11 @@ export const endAuction = async (req, res) => {
   }
 };
 
-// ─── Get my auctions (seller) — auto-expire stale ones ───────────────────────
+/**
+ * Get My Auctions
+ * Retrieves all auctions created by the currently authenticated seller.
+ * Auto-expires stale auctions and attaches additional statistics (bid counts, current price).
+ */
 export const getMyAuctions = async (req, res) => {
   try {
     const auctions = await Auction.find({ seller: req.user._id })

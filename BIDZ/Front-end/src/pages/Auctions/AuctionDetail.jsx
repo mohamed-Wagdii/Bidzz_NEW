@@ -52,9 +52,9 @@ export default function AuctionDetail() {
   useEffect(() => {
     loadAuction()
       .then(a => { if (user) checkChatAccess(); })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   // Countdown timer — when it hits zero, re-fetch from backend to get updated status
@@ -69,7 +69,7 @@ export default function AuctionDetail() {
         try {
           const aData = await auctionsAPI.getById(id);
           setAuction(aData.auction);
-        } catch {}
+        } catch { }
       }
     }, 1000);
     return () => clearInterval(t);
@@ -163,9 +163,9 @@ export default function AuctionDetail() {
     setReportLoading(true);
     setReportErrorMsg("");
     setReportSuccess(false);
-    
+
     reportsAPI.submit({ targetType: "auction", targetId: id, reason: reportReason, description: reportDesc })
-      .then(() => { 
+      .then(() => {
         setReportSuccess(true);
         setReportReason("");
         setReportDesc("");
@@ -257,10 +257,10 @@ export default function AuctionDetail() {
               {showReport && user && !isSeller && (
                 <div style={{ background: "#fff0f0", border: "1px solid #fca5a5", borderRadius: 8, padding: 12, marginBottom: 16 }}>
                   <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 600, color: "#e05252" }}>Report this Auction</p>
-                  
+
                   {reportSuccess && <p style={{ color: "#1a9e5a", fontSize: 13, marginBottom: 12, background: "#e6f9f0", padding: "8px 12px", borderRadius: 6 }}>Report submitted successfully! Thank you.</p>}
                   {reportErrorMsg && <p style={{ color: "#e05252", fontSize: 13, marginBottom: 12, background: "rgba(255,255,255,0.6)", borderRadius: 4, padding: "4px 8px" }}>{reportErrorMsg}</p>}
-                  
+
                   {!reportSuccess && (
                     <>
                       <select value={reportReason} onChange={e => setReportReason(e.target.value)} style={{ width: "100%", padding: 8, marginBottom: 8, borderRadius: 4, border: "1px solid #fca5a5", outline: "none" }}>

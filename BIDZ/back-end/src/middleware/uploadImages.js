@@ -34,6 +34,10 @@ const storage = multer.diskStorage({
   },
 });
 
+/**
+ * File Filter for Multer
+ * Restricts uploaded files to specific image formats (JPEG, PNG, WEBP).
+ */
 const fileFilter = (req, file, cb) => {
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);

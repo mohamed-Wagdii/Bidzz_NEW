@@ -5,6 +5,12 @@ import { ensureWalletForUser } from "./walletController.js";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+/**
+ * Google OAuth Login
+ * Verifies the Google ID token provided by the front-end.
+ * If the user doesn't exist, it creates a new account for them.
+ * Finally, generates and returns a JWT token for authentication.
+ */
 export const googleLogin = async (req, res) => {
   try {
     const { credential } = req.body;

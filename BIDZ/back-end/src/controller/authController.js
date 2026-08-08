@@ -7,6 +7,13 @@ import { ensureWalletForUser } from "./walletController.js";
 const getJwtSecret = () => process.env.JWT_SECRET || "dev-secret-key";
 const isDev = process.env.NODE_ENV !== "production";
 
+/**
+ * Register a new user account
+ * - Receives user data (name, email, password, phone) and validates it.
+ * - Hashes the password for security and saves the user to the database.
+ * - Creates a Wallet for the new user.
+ * - Finally, returns a Token so the user can log in automatically.
+ */
 export const register = async (req, res) => {
   try {
     const { error, value } = registerSchema.validate(req.body);
@@ -33,6 +40,13 @@ export const register = async (req, res) => {
   }
 };
 
+/**
+ * User Login
+ * - Receives the email and password and verifies the user exists.
+ * - Checks if the account is locked due to incorrect login attempts.
+ * - Compares the hashed password and, if correct, returns a Token to authorize the user.
+ * - Resets the failed login attempts counter upon successful login.
+ */
 export const login = async (req, res) => {
   try {
     const { error, value } = loginSchema.validate(req.body);
@@ -77,5 +91,19 @@ export const login = async (req, res) => {
   } catch (err) {
     console.error("[login error]", err.message);
     res.status(500).json({ message: "Server error.", ...(isDev && { detail: err.message }) });
+  }
+};
+
+/**
+ * Get User Profile
+ * - Relies on the Token to identify the current user.
+ * - Returns their data from the database (excluding password and sensitive data).
+ */
+export const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password -loginAttempts -lockUntil");
+    res.json({ user });
+  } catch {
+    res.status(500).json({ message: "Server error" });
   }
 };

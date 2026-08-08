@@ -1,6 +1,12 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
+/**
+ * Authentication Middleware
+ * Intercepts incoming requests to verify the presence and validity of a JWT token.
+ * Decodes the token, fetches the user from the database, and attaches it to `req.user`.
+ * Rejects requests with invalid or missing tokens.
+ */
 const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;

@@ -1,5 +1,9 @@
 import Ticket from "../models/Ticket.js";
 
+/**
+ * Buy Ticket
+ * Purchases a new ticket for the authenticated user that expires in 7 days.
+ */
 export const buyTicket = async (req, res) => {
   try {
     const ticket = await Ticket.create({
@@ -12,6 +16,10 @@ export const buyTicket = async (req, res) => {
   }
 };
 
+/**
+ * Get My Tickets
+ * Retrieves all tickets purchased by the authenticated user, sorted by creation date.
+ */
 export const getMyTickets = async (req, res) => {
   try {
     const tickets = await Ticket.find({ user: req.user._id }).sort({ createdAt: -1 });

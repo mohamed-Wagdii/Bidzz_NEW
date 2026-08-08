@@ -4,6 +4,11 @@ import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+/**
+ * POST /ask
+ * Receives a user's question, sanitizes the input, and delegates the query to the RAG AI service.
+ * Returns the AI-generated answer along with the source materials used to formulate it.
+ */
 router.post("/ask", authMiddleware, async (req, res) => {
   try {
     const { question } = req.body;

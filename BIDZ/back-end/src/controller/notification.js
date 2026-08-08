@@ -1,6 +1,10 @@
 import Notification from "../models/Notification.js";
 import { getIO } from "../Config/Socjet.js";
 
+/**
+ * Get My Notifications
+ * Retrieves the latest 50 notifications for the authenticated user, sorted by newest first.
+ */
 export const getMyNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({ receiver: req.user._id })
@@ -12,6 +16,10 @@ export const getMyNotifications = async (req, res) => {
   }
 };
 
+/**
+ * Get Unread Count
+ * Calculates and returns the total number of unread notifications for the user.
+ */
 export const getUnreadCount = async (req, res) => {
   try {
     const count = await Notification.countDocuments({ receiver: req.user._id, isRead: false });
@@ -21,6 +29,10 @@ export const getUnreadCount = async (req, res) => {
   }
 };
 
+/**
+ * Mark As Read
+ * Marks a specific notification as read based on its ID.
+ */
 export const markAsRead = async (req, res) => {
   try {
     await Notification.findOneAndUpdate(
@@ -33,6 +45,10 @@ export const markAsRead = async (req, res) => {
   }
 };
 
+/**
+ * Mark All As Read
+ * Marks all unread notifications for the user as read.
+ */
 export const markAllAsRead = async (req, res) => {
   try {
     await Notification.updateMany({ receiver: req.user._id, isRead: false }, { isRead: true });
@@ -42,6 +58,11 @@ export const markAllAsRead = async (req, res) => {
   }
 };
 
+/**
+ * Create And Emit Notification
+ * Utility function to create a new notification record in the DB and emit it via WebSockets
+ * in real-time to the intended recipient.
+ */
 export const createAndEmitNotification = async ({ receiver, sender = null, type, title, message, relatedId = null }) => {
   try {
     const notification = await Notification.create({ receiver, sender, type, title, message, relatedId });

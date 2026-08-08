@@ -11,7 +11,7 @@ const chatModel = genAI.getGenerativeModel({
 
 // ===============================
 // 2️⃣ COSINE SIMILARITY FUNCTION
-// (دي اللي بتقارن بين embeddings)
+// (Compares embeddings for similarity)
 // ===============================
 function cosineSimilarity(a, b) {
   let dot = 0;
@@ -36,7 +36,7 @@ function cosineSimilarity(a, b) {
 
 // ===============================
 // 3️⃣ SEARCH SIMILAR AUCTIONS
-// (هنا بنجيب أقرب داتا للسؤال)
+// (Retrieves the closest data to the query)
 // ===============================
 async function searchSimilarAuctions(userQuery, topK = 3) {
   // createEmbedding uses RETRIEVAL_QUERY taskType — see embed.js
@@ -56,8 +56,8 @@ async function searchSimilarAuctions(userQuery, topK = 3) {
 
 
 // ===============================
-// 4️⃣ GENERATE ANSWER باستخدام Gemini
-// (بعد ما نجيب الداتا المناسبة)
+// 4️⃣ GENERATE ANSWER using Gemini
+// (After retrieving relevant data)
 // ===============================
 async function generateAnswer(userQuery, contextDocs) {
   const contextText = contextDocs.map((doc) => doc.text).join("\n\n---\n\n");
@@ -80,7 +80,7 @@ Answer:`;
 
 // ===============================
 // 5️⃣ MAIN RAG FUNCTION
-// (دي اللي هتستخدمها في الـ API)
+// (This is used in the API)
 // ===============================
 export async function askAuctionAI(userQuery) {
   if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === "your_gemini_api_key_here") {

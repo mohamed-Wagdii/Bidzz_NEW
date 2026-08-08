@@ -5,6 +5,11 @@ import Product from "../models/Product.js";
 import Order from "../models/Order.js";
 import logger from "../Config/logger.js";
 
+/**
+ * Submit Report
+ * Allows a user to submit a report against a seller, buyer, auction, message, order, or product.
+ * Validates the report type and reason, and prevents duplicate pending reports.
+ */
 export const submitReport = async (req, res) => {
   try {
     const { targetType, targetId, reason, description } = req.body;
@@ -48,6 +53,10 @@ export const submitReport = async (req, res) => {
 };
 
 
+/**
+ * Get My Reports
+ * Retrieves the last 50 reports submitted by the currently authenticated user.
+ */
 export const getMyReports = async (req, res) => {
   try {
     const reports = await Report.find({ reporter: req.user._id })
@@ -61,6 +70,11 @@ export const getMyReports = async (req, res) => {
 
 // ── Admin only ──────────────────────────────────────────────────────────────
 
+/**
+ * Get All Reports (Admin)
+ * Fetches a paginated list of all reports across the platform.
+ * Hydrates the reports with target names (e.g., user name, product name) dynamically.
+ */
 export const getAllReports = async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
@@ -103,6 +117,11 @@ export const getAllReports = async (req, res) => {
   }
 };
 
+/**
+ * Resolve Report (Admin)
+ * Allows an admin to resolve a report by specifying an action (e.g., ban, suspend, delete_auction).
+ * Applies the corresponding penalty to the reported target.
+ */
 export const resolveReport = async (req, res) => {
   try {
     const { id } = req.params;
@@ -135,6 +154,10 @@ export const resolveReport = async (req, res) => {
   }
 };
 
+/**
+ * Get Report Stats (Admin)
+ * Returns the counts of pending, resolved, and rejected reports for the admin dashboard.
+ */
 export const getReportStats = async (req, res) => {
   try {
     const [pending, resolved, rejected] = await Promise.all([

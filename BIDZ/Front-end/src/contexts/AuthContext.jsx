@@ -22,6 +22,9 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
+  /**
+   * Logs in a user by saving their token and details to local storage and state.
+   */
   const login = (tokenVal, userData) => {
     localStorage.setItem("token", tokenVal);
     localStorage.setItem("user", JSON.stringify(userData));
@@ -29,6 +32,9 @@ export function AuthProvider({ children }) {
     setUser(userData);
   };
 
+  /**
+   * Logs out the user by clearing token and details from local storage and state.
+   */
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");

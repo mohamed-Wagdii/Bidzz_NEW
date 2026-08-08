@@ -6,6 +6,11 @@ import { ensureWalletForUser } from "./walletController.js";
 import { createAndEmitNotification } from "./notification.js";
 import QRCode from "qrcode";
 
+/**
+ * Get Delivery Data
+ * Retrieves delivery information for a specific order.
+ * Automatically generates a QR code for the order if it doesn't already exist.
+ */
 export const getDeliveryData = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate("auction winner seller product");
@@ -32,6 +37,12 @@ export const getDeliveryData = async (req, res) => {
   }
 };
 
+/**
+ * Verify Delivery QR
+ * Verifies the delivery QR code scanned by the buyer.
+ * Upon successful verification, it releases the funds from the admin's escrow to the seller's wallet
+ * and marks the order as delivered.
+ */
 export const verifyDeliveryQr = async (req, res) => {
   try {
     const { orderId, qrData } = req.body;

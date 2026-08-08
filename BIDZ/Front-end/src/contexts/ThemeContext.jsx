@@ -302,9 +302,20 @@ export function ThemeProvider({ children }) {
     document.documentElement.setAttribute("lang", lang);
   }, [lang, isRTL]);
 
+  /**
+   * Translates a given key based on the currently selected language.
+   * Fallbacks to English, then to the key itself if not found.
+   */
   const t = (key) => translations[lang]?.[key] ?? translations.en[key] ?? key;
 
+  /**
+   * Toggles the theme between light and dark mode.
+   */
   const toggleDark = () => setDark(d => !d);
+
+  /**
+   * Toggles the application language between English and Arabic.
+   */
   const toggleLang = () => setLang(l => l === "en" ? "ar" : "en");
 
   return (

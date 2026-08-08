@@ -3,6 +3,11 @@ import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import sendEmail from "../sendEmail/sendEmail.js";
 
+/**
+ * Request Password Reset
+ * Initiates the password reset flow. Generates a secure token, hashes it,
+ * stores it in the database with an expiration time, and sends an email to the user.
+ */
 export const requestPasswordReset = async (req, res) => {
   try {
     const { email } = req.body;
@@ -30,6 +35,11 @@ export const requestPasswordReset = async (req, res) => {
   }
 };
 
+/**
+ * Reset Password
+ * Accepts a reset token and a new password. Validates the token's hash and expiration.
+ * If valid, updates the user's password and clears the reset token from the database.
+ */
 export const resetPassword = async (req, res) => {
   try {
     const { token, password } = req.body;

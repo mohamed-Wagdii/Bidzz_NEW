@@ -12,6 +12,11 @@ const upload = multer({ storage });
 
 const router = express.Router();
 
+/**
+ * POST /
+ * Uploads up to 10 images and returns their URLs.
+ * Images are saved to the 'src/images' directory on the server.
+ */
 router.post("/", authMiddleware, upload.array("images", 10), (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {

@@ -1,14 +1,14 @@
 # ==========================================
 # Stage 1: Build the React/Vite application
 # ==========================================
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
 # Copy package files and install dependencies
 COPY package*.json ./
-# Using npm ci for a clean, reliable install
-RUN npm ci
+# Using npm install to prevent lockfile sync issues
+RUN npm install
 
 # Copy the rest of the frontend code
 COPY . .
