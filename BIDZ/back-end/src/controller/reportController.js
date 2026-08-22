@@ -12,9 +12,12 @@ import logger from "../Config/logger.js";
  */
 export const submitReport = async (req, res) => {
   try {
+    console.log("==> submitReport called with body:", req.body);
     const { targetType, targetId, reason, description } = req.body;
-    if (!targetType || !targetId || !reason)
+    if (!targetType || !targetId || !reason) {
+      console.log("==> submitReport returning 400 (missing fields)");
       return res.status(400).json({ message: "targetType, targetId and reason are required." });
+    }
 
     const allowedTargetTypes = ["seller", "buyer", "auction", "message", "order", "product"];
     if (!allowedTargetTypes.includes(targetType)) {
@@ -26,6 +29,7 @@ export const submitReport = async (req, res) => {
       return res.status(400).json({ message: `reason must be one of: ${allowedReasons.join(", ")}` });
     }
 
+    console.log("==> submitReport checking existing report");
     // Prevent duplicate pending reports from same user
     const existing = await Report.findOne({
       reporter: req.user._id,
@@ -33,8 +37,12 @@ export const submitReport = async (req, res) => {
       targetType,
       status: "pending",
     });
-    if (existing)
+    if (existing) {
+      console.log("==> submitReport returning 409 (duplicate)");
       return res.status(409).json({ message: "You already have a pending report for this item." });
+    }
+
+    console.log("==> submitReport creating report");
 
     const report = await Report.create({
       reporter: req.user._id,
@@ -44,6 +52,7 @@ export const submitReport = async (req, res) => {
       description: description?.slice(0, 1000) || "",
     });
 
+    console.log("==> submitReport success:", report._id);
     logger.info("Report submitted", { reportId: report._id, reporter: req.user._id, targetType, reason });
     res.status(201).json({ message: "Report submitted successfully.", report });
   } catch (err) {
@@ -79,17 +88,17 @@ export const getAllReports = async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
     const filter = status ? { status } : {};
-    const [reportsRaw, total] = await Promise.all([
-      Report.find(filter)
-        .populate("reporter", "fullName email role")
-        .populate("resolvedBy", "fullName")
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(Number(limit)),
-      Report.countDocuments(filter),
-    ]);
+    const reportsRaw = await Report.find(filter)
+      .populate("reporter", "fullName email role")
+      .populate("resolvedBy", "fullName")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+      
+    const total = await Report.countDocuments(filter);
 
-    const reports = await Promise.all(reportsRaw.map(async (r) => {
+    const reports = [];
+    for (const r of reportsRaw) {
       const rep = r.toObject();
       rep.targetName = "Unknown";
       try {
@@ -108,8 +117,8 @@ export const getAllReports = async (req, res) => {
       } catch (e) {
         // ignore fetch errors for invalid IDs
       }
-      return rep;
-    }));
+      reports.push(rep);
+    }
 
     res.json({ reports, total, page: Number(page), pages: Math.ceil(total / limit) });
   } catch (err) {
@@ -160,11 +169,9 @@ export const resolveReport = async (req, res) => {
  */
 export const getReportStats = async (req, res) => {
   try {
-    const [pending, resolved, rejected] = await Promise.all([
-      Report.countDocuments({ status: "pending" }),
-      Report.countDocuments({ status: "resolved" }),
-      Report.countDocuments({ status: "rejected" }),
-    ]);
+    const pending = await Report.countDocuments({ status: "pending" });
+    const resolved = await Report.countDocuments({ status: "resolved" });
+    const rejected = await Report.countDocuments({ status: "rejected" });
     res.json({ pending, resolved, rejected, total: pending + resolved + rejected });
   } catch (err) {
     res.status(500).json({ message: "Server error." });

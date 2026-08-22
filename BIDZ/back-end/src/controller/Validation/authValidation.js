@@ -13,3 +13,17 @@ export const loginSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(1).required(),   // was min(6)
 });
+
+export const shippingDetailsSchema = Joi.object({
+  fullName: Joi.string().optional().allow(""),
+  phone: Joi.string().optional().allow(""),
+  country: Joi.string().optional().allow(""),
+  city: Joi.string().optional().allow(""),
+  address: Joi.string().optional().allow(""),
+  notes: Joi.string().optional().allow(""),
+});
+
+export const orderShippingSchema = Joi.object({
+  shippingAddress: Joi.string().optional().allow(""),
+  shippingDetails: shippingDetailsSchema.optional()
+}).unknown(true);

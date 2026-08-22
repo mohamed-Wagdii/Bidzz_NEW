@@ -65,6 +65,14 @@ export const getDashboard = async (req, res) => {
       });
     }
 
+    // For Admins (when accessing personal dashboard endpoint inadvertently)
+    if (req.user.role === "admin") {
+      return res.json({
+        role: "admin",
+        message: "Detailed admin analytics are fetched via /api/analysis instead of /api/analysis/dashboard."
+      });
+    }
+
     // For Buyers
     const myBids = await Bid.find({ buyer: userId })
       .populate({ path: "auction", populate: { path: "Product", select: "name image" } })

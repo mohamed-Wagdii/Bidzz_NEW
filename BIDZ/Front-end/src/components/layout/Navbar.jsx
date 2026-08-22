@@ -123,7 +123,7 @@ export default function Navbar() {
     }}>
 
       {/* Logo */}
-      <Link to="/" style={{ textDecoration: "none", ...(!isRTL ? { marginRight: 32 } : { marginLeft: 32 }) }}>
+      <Link to={user ? dashPath : "/"} style={{ textDecoration: "none", ...(!isRTL ? { marginRight: 32 } : { marginLeft: 32 }) }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 34, height: 34, borderRadius: "10px", background: "linear-gradient(135deg, #111, #333)", color: "var(--gold)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16 }}>BZ</div>
           <span style={{ fontSize: 22, fontWeight: 900, fontFamily: "var(--font-display)", letterSpacing: 1, color: "#111" }}>BID<span style={{ color: "var(--gold)" }}>ZONE</span></span>

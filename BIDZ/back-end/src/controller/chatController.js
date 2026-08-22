@@ -5,18 +5,17 @@ import User from "../models/User.js";
 import { getIO } from "../Config/Socjet.js";
 import { createAndEmitNotification } from "./notification.js";
 
+import { verifyAuctionAccess } from "../Services/auctionService.js";
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 /**
  * Has Bid Access
- * Helper function to determine if a user is either the seller or a bidder in a specific auction.
+ * Helper wrapper around the shared verifyAuctionAccess service.
  */
 const hasBidAccess = async (userId, auctionId) => {
-  const auction = await Auction.findById(auctionId);
-  if (!auction) return false;
-  const isSeller = auction.seller.toString() === userId.toString();
-  const isBidder = auction.participants.some(p => p.toString() === userId.toString());
-  return isSeller || isBidder;
+  const result = await verifyAuctionAccess(userId, auctionId);
+  return result.hasAccess;
 };
 
 /**

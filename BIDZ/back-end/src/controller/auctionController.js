@@ -135,7 +135,9 @@ export const getAllAuctions = async (req, res) => {
       status: "active",
       endTime: { $lte: new Date() },
     });
-    await Promise.all(stale.map(a => maybeExpireAuction(a)));
+    for (const a of stale) {
+      await maybeExpireAuction(a);
+    }
 
     const auctions = await Auction.find({ status: "active" })
       .populate("Product")
@@ -313,19 +315,20 @@ export const getMyAuctions = async (req, res) => {
       .populate("Product")
       .sort({ createdAt: -1 });
 
-    // Auto-expire any that have passed their endTime
-    const resolved = await Promise.all(auctions.map(a => maybeExpireAuction(a)));
-
-    const auctionsWithCounts = await Promise.all(
-      resolved.map(async (a) => {
-        const bidCount = await Bid.countDocuments({ auction: a._id });
-        const topBid = await Bid.findOne({ auction: a._id }).sort({ amount: -1 });
-        const obj = a.toObject();
-        obj.bidCount = bidCount;
-        obj.currentPrice = topBid?.amount || a.startingPrice;
-        return obj;
-      })
-    );
+    // Auto-expire any that have passed their endTime and fetch counts
+    const auctionsWithCounts = [];
+    for (const a of auctions) {
+      const resolvedAuction = await maybeExpireAuction(a);
+      
+      const bidCount = await Bid.countDocuments({ auction: resolvedAuction._id });
+      const topBid = await Bid.findOne({ auction: resolvedAuction._id }).sort({ amount: -1 });
+      
+      const obj = resolvedAuction.toObject();
+      obj.bidCount = bidCount;
+      obj.currentPrice = topBid?.amount || resolvedAuction.startingPrice;
+      
+      auctionsWithCounts.push(obj);
+    }
 
     return res.status(200).json({ message: "success", auctions: auctionsWithCounts });
   } catch (error) {

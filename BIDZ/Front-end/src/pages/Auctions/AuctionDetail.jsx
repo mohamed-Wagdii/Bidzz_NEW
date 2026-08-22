@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { auctionsAPI, bidsAPI, chatAPI, ordersAPI } from "../../services/api";
+import { auctionsAPI, bidsAPI, chatAPI, ordersAPI, reportsAPI } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import Navbar from "../../components/layout/Navbar";
 import Footer from "../../components/layout/Footer";

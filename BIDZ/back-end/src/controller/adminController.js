@@ -19,14 +19,13 @@ export const getUsers = async (req, res) => {
       { fullName: { $regex: search, $options: "i" } },
       { email:    { $regex: search, $options: "i" } },
     ];
-    const [users, total] = await Promise.all([
-      User.find(filter)
-        .select("-password -passwordResetToken -passwordResetExpires")
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(Number(limit)),
-      User.countDocuments(filter),
-    ]);
+    const users = await User.find(filter)
+      .select("-password -passwordResetToken -passwordResetExpires")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+    
+    const total = await User.countDocuments(filter);
     res.json({ users, total, page: Number(page), pages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -84,21 +83,22 @@ export const getAuctions = async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
     const filter = status ? { status } : {};
-    const [auctions, total] = await Promise.all([
-      Auction.find(filter)
-        .populate("Product", "name image price")
-        .populate("seller", "fullName email")
-        .populate("highestBider", "fullName")
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(Number(limit)),
-      Auction.countDocuments(filter),
-    ]);
+    const auctions = await Auction.find(filter)
+      .populate("Product", "name image price")
+      .populate("seller", "fullName email")
+      .populate("highestBider", "fullName")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+      
+    const total = await Auction.countDocuments(filter);
+
     // attach bid counts
-    const result = await Promise.all(auctions.map(async a => {
+    const result = [];
+    for (const a of auctions) {
       const bidCount = await Bid.countDocuments({ auction: a._id });
-      return { ...a.toObject(), bidCount };
-    }));
+      result.push({ ...a.toObject(), bidCount });
+    }
     res.json({ auctions: result, total, page: Number(page), pages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -143,16 +143,15 @@ export const getOrders = async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
     const filter = status ? { orderStatus: status } : {};
-    const [orders, total] = await Promise.all([
-      Order.find(filter)
-        .populate({ path: "auction", populate: { path: "Product", select: "name image" } })
-        .populate("winner", "fullName email")
-        .populate("seller", "fullName email")
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(Number(limit)),
-      Order.countDocuments(filter),
-    ]);
+    const orders = await Order.find(filter)
+      .populate({ path: "auction", populate: { path: "Product", select: "name image" } })
+      .populate("winner", "fullName email")
+      .populate("seller", "fullName email")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+      
+    const total = await Order.countDocuments(filter);
     res.json({ orders, total, page: Number(page), pages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -208,23 +207,24 @@ export const getFinances = async (req, res) => {
       type: { $in: ["bid_lock", "escrow_hold", "order_charge", "escrow_release"] }
     };
 
-    const [transactions, total, pendingAgg, completedAgg] = await Promise.all([
-      WalletTransaction.find(filter)
-        .populate("user", "fullName email")
-        .populate({ path: "relatedAuction", populate: { path: "Product", select: "name image" } })
-        .populate("relatedOrder", "orderStatus paymentStatus")
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(Number(limit)),
-      WalletTransaction.countDocuments(filter),
-      WalletTransaction.aggregate([
-        { $match: { type: "escrow_hold", status: "pending" } },
-        { $group: { _id: null, sum: { $sum: "$amount" } } }
-      ]),
-      WalletTransaction.aggregate([
-        { $match: { type: "escrow_hold", status: "completed" } },
-        { $group: { _id: null, sum: { $sum: "$amount" } } }
-      ])
+    const transactions = await WalletTransaction.find(filter)
+      .populate("user", "fullName email")
+      .populate({ path: "relatedAuction", populate: { path: "Product", select: "name image" } })
+      .populate("relatedOrder", "orderStatus paymentStatus")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+      
+    const total = await WalletTransaction.countDocuments(filter);
+    
+    const pendingAgg = await WalletTransaction.aggregate([
+      { $match: { type: "escrow_hold", status: "pending" } },
+      { $group: { _id: null, sum: { $sum: "$amount" } } }
+    ]);
+    
+    const completedAgg = await WalletTransaction.aggregate([
+      { $match: { type: "escrow_hold", status: "completed" } },
+      { $group: { _id: null, sum: { $sum: "$amount" } } }
     ]);
     
     const totalPending = pendingAgg.length > 0 ? pendingAgg[0].sum : 0;

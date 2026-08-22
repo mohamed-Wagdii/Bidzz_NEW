@@ -21,7 +21,7 @@ router.get("/can-chat",                        authMiddleware, canChat);
  * POST /conversation
  * Finds an existing conversation between users or creates a new one if it doesn't exist.
  */
-router.post("/conversation",                   authMiddleware, findOrCreateConversation);
+router.post("/conversation",   authMiddleware, findOrCreateConversation);
 
 /**
  * GET /conversations

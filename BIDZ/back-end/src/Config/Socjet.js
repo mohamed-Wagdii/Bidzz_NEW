@@ -1,5 +1,5 @@
 import { Server } from "socket.io";
-import Auction from "../models/Auctions.js";
+import { verifyAuctionAccess } from "../Services/auctionService.js";
 
 let io;
 
@@ -35,27 +35,10 @@ export const initSocket = (server) => {
     // =========================
     socket.on("joinAuction", async ({ auctionId, userId }) => {
       try {
-        const auction = await Auction.findById(auctionId);
+        const { hasAccess, error } = await verifyAuctionAccess(userId, auctionId);
 
-        if (!auction) {
-          return socket.emit("error", "Auction not found");
-        }
-
-        // ✅ Auction Owner
-        const isOwner =
-          auction.seller.toString() === userId;
-
-        // ✅ Auction Participant
-        const isParticipant = auction.participants?.some(
-          (p) => p.toString() === userId
-        );
-
-        // 🚫 check permissions
-        if (!isOwner && !isParticipant) {
-          return socket.emit(
-            "error",
-            "Not allowed to join this auction"
-          );
+        if (!hasAccess) {
+          return socket.emit("error", error);
         }
 
         // join room

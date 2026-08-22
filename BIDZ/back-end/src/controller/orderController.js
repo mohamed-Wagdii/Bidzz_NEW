@@ -6,7 +6,10 @@ import WalletTransaction from "../models/WalletTransaction.js";
 import { createAndEmitNotification } from "./notification.js";
 import { maybeExpireAuction } from "./auctionController.js";
 import { ensureWalletForUser } from "./walletController.js";
+import { createStripePaymentIntent, constructStripeEvent } from "../Services/stripe.service.js";
+import { createStammpPayment, verifyStammpCallback } from "../Services/stammp.service.js";
 import QRCode from "qrcode";
+import { orderShippingSchema } from "./Validation/authValidation.js";
 
 /**
  * Create Order
@@ -15,6 +18,9 @@ import QRCode from "qrcode";
  */
 export const createOrder = async (req, res) => {
   try {
+    const { error } = orderShippingSchema.validate(req.body);
+    if (error) return res.status(400).json({ message: error.details[0].message });
+
     const { auctionId } = req.params;
 
     let auction = await Auction.findById(auctionId).populate("Product");
@@ -65,7 +71,7 @@ export const createOrder = async (req, res) => {
       title: "New Order",
       message: `The winner is ready to pay for "${auction.Product?.name}".`,
       relatedId: order._id,
-    }).catch(() => {});
+    }).catch(() => { });
 
     return res.status(201).json({ message: "Order created.", orderId: order._id });
   } catch (error) {
@@ -126,7 +132,7 @@ export const payWithWallet = async (req, res) => {
       title: "Payment Successful",
       message: `Your payment of $${order.finalPrice} was successful. A QR code has been generated for delivery.`,
       relatedId: order._id,
-    }).catch(() => {});
+    }).catch(() => { });
 
     createAndEmitNotification({
       sender: req.user._id,
@@ -135,7 +141,7 @@ export const payWithWallet = async (req, res) => {
       title: "QR Code Ready",
       message: `Payment received for your auction. A QR code has been generated for delivery confirmation.`,
       relatedId: order._id,
-    }).catch(() => {});
+    }).catch(() => { });
 
     return res.status(200).json({ message: "Payment successful", order });
   } catch (error) {
@@ -149,7 +155,10 @@ export const payWithWallet = async (req, res) => {
  */
 export const updateShipping = async (req, res) => {
   try {
-    const { shippingAddress, shippingDetails } = req.body;
+    const { error, value } = orderShippingSchema.validate(req.body);
+    if (error) return res.status(400).json({ message: error.details[0].message });
+
+    const { shippingAddress, shippingDetails } = value;
     if (!shippingAddress?.trim() && !shippingDetails) {
       return res.status(400).json({ message: "Shipping address is required" });
     }
@@ -244,7 +253,7 @@ export const updateOrderStatus = async (req, res) => {
               title: "Payment Released",
               message: `$${order.finalPrice} has been transferred to your wallet for order #${order._id?.toString().slice(-8).toUpperCase()}.`,
               relatedId: order._id,
-            }).catch(() => {});
+            }).catch(() => { });
           }
         }
         order.qrVerified = true; // Prevent double release
@@ -265,7 +274,7 @@ export const updateOrderStatus = async (req, res) => {
         title: `Order ${orderStatus.charAt(0).toUpperCase() + orderStatus.slice(1)}`,
         message: statusMessages[orderStatus],
         relatedId: order._id,
-      }).catch(() => {});
+      }).catch(() => { });
     }
 
     return res.status(200).json({ message: "Order status updated", order });
@@ -285,4 +294,128 @@ export const paymentSuccess = async (req, res) => res.redirect(`${process.env.FR
  * Payment Cancel (Legacy)
  * Redirects the user to the orders dashboard if an external payment is cancelled.
  */
-export const paymentCancel  = async (req, res) => res.redirect(`${process.env.FRONTEND_URL || "http://localhost:5173"}/dashboard/orders`);
+export const paymentCancel = async (req, res) => res.redirect(`${process.env.FRONTEND_URL || "http://localhost:5173"}/dashboard/orders`);
+
+// ── Stripe Controllers ────────────────────────────────────────────────────────
+
+export const payWithStripe = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    const uid = req.user._id.toString();
+    const winnerId = order.winner?._id?.toString() || order.winner?.toString();
+    if (uid !== winnerId) return res.status(403).json({ message: "Not authorized" });
+
+    if (order.paymentStatus === "paid") {
+      return res.status(400).json({ message: "Order already paid" });
+    }
+
+    const { clientSecret, paymentIntentId } = await createStripePaymentIntent(order);
+    res.json({ clientSecret, paymentIntentId });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const stripeWebhook = async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  if (!sig) return res.status(400).json({ message: "Missing stripe-signature header" });
+
+  let event;
+  try {
+    event = constructStripeEvent(req.rawBody, sig);
+  } catch (err) {
+    return res.status(400).json({ message: `Webhook signature failed: ${err.message}` });
+  }
+
+  if (event.type === "payment_intent.succeeded") {
+    const orderId = event.data.object.metadata?.orderId;
+    if (orderId) {
+      await Order.findByIdAndUpdate(orderId, {
+        paymentStatus: "paid",
+        orderStatus: "processing",
+        paidAt: new Date(),
+      });
+    }
+  }
+
+  res.json({ received: true });
+};
+
+// ── STAMMP Controllers ────────────────────────────────────────────────────────
+
+export const payWithStammp = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    const uid = req.user._id.toString();
+    const winnerId = order.winner?._id?.toString() || order.winner?.toString();
+    if (uid !== winnerId) return res.status(403).json({ message: "Not authorized" });
+
+    if (order.paymentStatus === "paid") {
+      return res.status(400).json({ message: "Order already paid" });
+    }
+
+    const { paymentUrl, reference } = await createStammpPayment(order);
+    res.json({ paymentUrl, reference });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const stammpWebhook = async (req, res) => {
+  try {
+    const { orderId, paid } = verifyStammpCallback(req.body);
+    if (paid) {
+      await Order.findByIdAndUpdate(orderId, {
+        paymentStatus: "paid",
+        orderStatus: "processing",
+        paidAt: new Date(),
+      });
+    }
+    res.json({ received: true });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+// ── General Order Controllers ─────────────────────────────────────────────────
+
+export const getMyOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({
+      $or: [{ winner: req.user._id }, { seller: req.user._id }],
+    })
+      .populate({ path: "auction", populate: { path: "Product", select: "name image" } })
+      .populate("winner", "fullName email")
+      .populate("seller", "fullName email")
+      .sort({ createdAt: -1 });
+    res.json({ orders });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const getOrderById = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate({ path: "auction", populate: { path: "Product", select: "name image description" } })
+      .populate("winner", "fullName email")
+      .populate("seller", "fullName email");
+
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    const uid = req.user._id.toString();
+    const winnerId = order.winner?._id?.toString() || order.winner?.toString();
+    const sellerId = order.seller?._id?.toString() || order.seller?.toString();
+    if (winnerId !== uid && sellerId !== uid && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    res.json({ order });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
