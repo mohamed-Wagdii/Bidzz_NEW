@@ -1,4 +1,4 @@
-name: CI Pipeline
+﻿name: CI Pipeline
 
 on:
   push:
@@ -7,11 +7,11 @@ on:
     branches: [main]
 
 jobs:
-  # ──────────────────────────────────────────
+  # ------------------------------------------
   # Job 1: Build Back-end Docker Image
-  # ──────────────────────────────────────────
+  # ------------------------------------------
   build-backend:
-    name: 🔧 Build Back-end
+    name: Build Back-end
     runs-on: ubuntu-latest
 
     steps:
@@ -24,18 +24,18 @@ jobs:
       - name: Build back-end Docker image
         uses: docker/build-push-action@v6
         with:
-          context: ./back-end
-          file: ./back-end/Dockerfile
+          context: ./BIDZ/back-end
+          file: ./BIDZ/back-end/Dockerfile
           push: false
           tags: bidz-backend:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ──────────────────────────────────────────
+  # ------------------------------------------
   # Job 2: Lint + Build Front-end Docker Image
-  # ──────────────────────────────────────────
+  # ------------------------------------------
   build-frontend:
-    name: ⚛️ Lint & Build Front-end
+    name: Lint and Build Front-end
     runs-on: ubuntu-latest
 
     steps:
@@ -47,14 +47,14 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: Front-end/package-lock.json
+          cache-dependency-path: BIDZ/Front-end/package-lock.json
 
       - name: Install dependencies
-        working-directory: ./Front-end
+        working-directory: ./BIDZ/Front-end
         run: npm ci
 
       - name: Run ESLint
-        working-directory: ./Front-end
+        working-directory: ./BIDZ/Front-end
         run: npm run lint
 
       - name: Set up Docker Buildx
@@ -63,8 +63,8 @@ jobs:
       - name: Build front-end Docker image
         uses: docker/build-push-action@v6
         with:
-          context: ./Front-end
-          file: ./Front-end/Dockerfile
+          context: ./BIDZ/Front-end
+          file: ./BIDZ/Front-end/Dockerfile
           push: false
           tags: bidz-frontend:ci
           cache-from: type=gha
