@@ -83,7 +83,7 @@ export default function OrdersPage() {
               const isOrderSeller = (order.seller?._id?.toString() || order.seller?.toString()) === uid;
 
               // Determine the primary action button
-              let actionBtn = null;
+              let actionBtn;
               if (isOrderWinner && order.paymentStatus === "pending") {
                 actionBtn = (
                   <button
