@@ -1,4 +1,4 @@
-﻿name: CI Pipeline
+name: CI Pipeline
 
 on:
   push:
@@ -51,7 +51,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./BIDZ/Front-end
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Run ESLint
         working-directory: ./BIDZ/Front-end
