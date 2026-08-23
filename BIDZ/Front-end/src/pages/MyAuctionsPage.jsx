@@ -75,7 +75,7 @@ export default function MyAuctionsPage() {
             key={f}
             onClick={() => setFilter(f)}
             style={{
-              padding: "7px 18px", borderRadius: 20, border: "none",
+              padding: "7px 18px", borderRadius: 20,
               fontSize: 12, fontWeight: 600, cursor: "pointer",
               background: filter === f ? "#1A1814" : "#fff",
               color: filter === f ? "#fff" : "#666",

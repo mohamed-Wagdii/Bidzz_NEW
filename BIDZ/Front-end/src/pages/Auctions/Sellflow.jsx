@@ -131,7 +131,7 @@ function PickProduct({ onNext, onBack }) {
                 onClick={() => { setSelected(p._id); setError(""); }}
                 style={{
                   display: "flex", alignItems: "center", gap: 16,
-                  background: "#fff", borderRadius: 12, padding: "16px 20px",
+                  borderRadius: 12, padding: "16px 20px",
                   border: selected === p._id ? "2px solid #b8962e" : "1.5px solid #e8e2d4",
                   cursor: "pointer", transition: "all 0.15s",
                   background: selected === p._id ? "#fffdf5" : "#fff",

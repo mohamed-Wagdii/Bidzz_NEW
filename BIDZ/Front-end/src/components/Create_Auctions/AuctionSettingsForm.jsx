@@ -131,7 +131,7 @@ const styles = {
   wrapper: { flex: 1, display: "flex", flexDirection: "column", gap: "20px", fontFamily: "'Montserrat', sans-serif" },
   card: { background: "#fff", borderRadius: "14px", padding: "28px 28px", border: "1.5px solid #e8e2d4" },
   cardHeading: {
-    fontSize: "1rem", fontWeight: 700, color: "#1a1a1a",
+    fontWeight: 700, color: "#1a1a1a",
     marginBottom: "22px", display: "flex", alignItems: "center",
     fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "1.15rem",
   },
