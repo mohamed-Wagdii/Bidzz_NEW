@@ -23,7 +23,7 @@ router.post("/ask", authMiddleware, async (req, res) => {
       return res.status(400).json({ message: "Question cannot be empty" });
     }
 
-    const result = await askAuctionAI(cleanQuestion);
+    const result = await askAuctionAI(cleanQuestion, req.user?._id);
 
     return res.status(200).json({
       success: true,

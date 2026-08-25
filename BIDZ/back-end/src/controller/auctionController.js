@@ -3,7 +3,6 @@ import Auction from "../models/Auctions.js";
 import Bid from "../models/Bid.js";
 import Ticket from "../models/Ticket.js";
 import { createAndEmitNotification } from "./notification.js";
-import { ingestAuction } from "../AI/ingestAuctions.js";
 import { unlockFunds } from "./walletController.js";
 
 /**
@@ -114,9 +113,6 @@ export const createAuction = async (req, res) => {
     ticket.used = true;
     await ticket.save();
 
-    // Ingest into RAG (non-blocking)
-    ingestAuction(auction, product, req.user).catch(() => {});
-
     return res.status(201).json({ message: "Auction created successfully.", auction });
   } catch (error) {
     return res.status(500).json({ message: "Error creating auction.", error: error.message });
@@ -218,6 +214,7 @@ export const updateAuctions = async (req, res) => {
     }
 
     await auction.save();
+
     return res.status(200).json({ message: "Auction updated successfully", auction });
   } catch (error) {
     return res.status(500).json({ message: "Error updating auction.", error: error.message });
@@ -237,6 +234,7 @@ export const deleteAuction = async (req, res) => {
       return res.status(403).json({ message: "Not allowed to delete auctions." });
     }
     await Auction.findByIdAndDelete(id);
+
     return res.status(200).json({ message: "Auction deleted successfully" });
   } catch (error) {
     return res.status(500).json({ message: "Error deleting auction.", error: error.message });

@@ -1,101 +1,153 @@
-import AuctionEmbedding from "../models/AuctionEmbedding.js";
-import { createEmbedding } from "./embed.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Auction from "../models/Auctions.js";
+import Product from "../models/Product.js";
+import Bid from "../models/Bid.js";
+import Wallet from "../models/Wallet.js";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+const tools = [
+  {
+    functionDeclarations: [
+      {
+        name: "getAuctions",
+        description: "Get a list of active auctions currently running on the BidZone platform.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            keyword: {
+              type: "STRING",
+              description: "Optional keyword to filter auctions by product name.",
+            },
+          },
+        },
+      },
+      {
+        name: "getUserBids",
+        description: "Get the current user's recent bids.",
+        parameters: {
+          type: "OBJECT",
+          properties: {},
+        },
+      },
+      {
+        name: "getWalletBalance",
+        description: "Get the current user's wallet balance, including locked or escrowed funds.",
+        parameters: {
+          type: "OBJECT",
+          properties: {},
+        },
+      },
+      {
+        name: "getSystemStats",
+        description: "Get general statistics about the BidZone platform, like total active auctions.",
+        parameters: {
+          type: "OBJECT",
+          properties: {},
+        },
+      }
+    ],
+  },
+];
+
+const systemInstructionText = `You are BidZone AI, a helpful, professional AI assistant for the BidZone online auction platform. 
+You can use tools to query the database live and answer user questions accurately.
+If the user asks about their personal data (bids, wallet), use the tools. 
+Answer in a friendly tone. IMPORTANT: Do NOT use any Markdown formatting (no **, no ##, no ---, no *, etc.). Use plain text only, separated by normal line breaks.`;
+
 const chatModel = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash",
+  model: "gemini-3.6-flash",
+  tools,
+  systemInstruction: {
+    role: "system",
+    parts: [{ text: systemInstructionText }],
+  },
 });
 
+async function executeTool(call, userId) {
+  const { name, args } = call;
 
-// ===============================
-// 2️⃣ COSINE SIMILARITY FUNCTION
-// (Compares embeddings for similarity)
-// ===============================
-function cosineSimilarity(a, b) {
-  let dot = 0;
-  let magA = 0;
-  let magB = 0;
+  if (name === "getAuctions") {
+    const { keyword } = args;
+    let auctions = await Auction.find({ status: "active" }).populate("Product").populate("seller", "fullName").limit(5);
+    
+    if (keyword) {
+      const keywordRegex = new RegExp(keyword, "i");
+      auctions = auctions.filter(a => a.Product && keywordRegex.test(a.Product.name));
+    }
 
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    magA += a[i] * a[i];
-    magB += b[i] * b[i];
+    return auctions.map(a => ({
+      auctionId: a._id,
+      productName: a.Product?.name,
+      description: a.Product?.description,
+      seller: a.seller?.fullName,
+      startingPrice: a.startingPrice,
+      endTime: a.endTime,
+    }));
   }
 
-  magA = Math.sqrt(magA);
-  magB = Math.sqrt(magB);
+  if (name === "getUserBids") {
+    if (!userId) return { error: "User is not authenticated. Cannot fetch bids." };
+    const bids = await Bid.find({ buyer: userId }).populate({ path: "auction", populate: { path: "Product" } }).limit(5).sort({ createdAt: -1 });
+    return bids.map(b => ({
+      amount: b.amount,
+      productName: b.auction?.Product?.name,
+      time: b.createdAt,
+      status: b.auction?.status,
+    }));
+  }
 
-  // Guard against zero-magnitude vectors to prevent NaN from division by zero
-  if (magA === 0 || magB === 0) return 0;
+  if (name === "getWalletBalance") {
+    if (!userId) return { error: "User is not authenticated. Cannot fetch wallet balance." };
+    const wallet = await Wallet.findOne({ user: userId });
+    if (!wallet) return { balance: 0, lockedBalance: 0, escrowBalance: 0 };
+    return {
+      balance: wallet.balance,
+      lockedBalance: wallet.lockedBalance,
+      escrowBalance: wallet.escrowBalance,
+    };
+  }
 
-  return dot / (magA * magB);
+  if (name === "getSystemStats") {
+    const activeAuctions = await Auction.countDocuments({ status: "active" });
+    const totalBids = await Bid.countDocuments();
+    return { activeAuctions, totalBids };
+  }
+
+  return { error: `Tool ${name} not found.` };
 }
 
-
-// ===============================
-// 3️⃣ SEARCH SIMILAR AUCTIONS
-// (Retrieves the closest data to the query)
-// ===============================
-async function searchSimilarAuctions(userQuery, topK = 3) {
-  // createEmbedding uses RETRIEVAL_QUERY taskType — see embed.js
-  const queryEmbedding = await createEmbedding(userQuery);
-  const allDocs = await AuctionEmbedding.find();
-  if (!allDocs.length) return [];
-
-  const scored = allDocs.map((doc) => ({
-    auctionId: doc.auctionId,
-    text: doc.text,
-    score: cosineSimilarity(queryEmbedding, doc.embedding),
-  }));
-
-  scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, topK);
-}
-
-
-// ===============================
-// 4️⃣ GENERATE ANSWER using Gemini
-// (After retrieving relevant data)
-// ===============================
-async function generateAnswer(userQuery, contextDocs) {
-  const contextText = contextDocs.map((doc) => doc.text).join("\n\n---\n\n");
-
-  const prompt = `You are an AI assistant for BidZone, an online auction platform.
-Use ONLY the context below to answer the user's question.
-If the context doesn't contain enough info, say so honestly.
-
-Context:
-${contextText}
-
-User Question: ${userQuery}
-
-Answer:`;
-
-  const result = await chatModel.generateContent(prompt);
-  return result.response.text();
-}
-
-
-// ===============================
-// 5️⃣ MAIN RAG FUNCTION
-// (This is used in the API)
-// ===============================
-export async function askAuctionAI(userQuery) {
+export async function askAuctionAI(userQuery, userId) {
   if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === "your_gemini_api_key_here") {
     throw new Error("GEMINI_API_KEY is not configured.");
   }
 
-  const relevantDocs = await searchSimilarAuctions(userQuery);
+  const contents = [
+    { role: "user", parts: [{ text: userQuery }] }
+  ];
 
-  if (!relevantDocs || relevantDocs.length === 0) {
-    const result = await chatModel.generateContent(
-      `You are a helpful assistant for BidZone, an online auction platform. Answer helpfully:\n\n${userQuery}`
-    );
-    return { answer: result.response.text(), sources: [] };
+  let result = await chatModel.generateContent({ contents });
+  let response = result.response;
+  const functionCalls = response.functionCalls();
+
+  if (functionCalls && functionCalls.length > 0) {
+    const call = functionCalls[0];
+    const apiResponse = await executeTool(call, userId);
+    
+    contents.push({ role: "model", parts: response.candidates[0].content.parts });
+    contents.push({
+      role: "user",
+      parts: [{
+        functionResponse: {
+          name: call.name,
+          response: { result: apiResponse }
+        }
+      }]
+    });
+    
+    result = await chatModel.generateContent({ contents });
+    response = result.response;
   }
 
-  const answer = await generateAnswer(userQuery, relevantDocs);
-  return { answer, sources: relevantDocs };
+  return { answer: response.text(), sources: [] };
 }

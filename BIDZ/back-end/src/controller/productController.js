@@ -46,12 +46,15 @@ export const createProduct = async (req, res) => {
     // Build public-accessible URLs served by Express static middleware at /images
     const imageUrls = req.files.map(f => `/images/${f.filename}`);
 
+    const productStatus = parsedPrice <= 10000 ? "approved" : "pending";
+
     const product = new Product({
       name: cleanName,
       description: cleanDescription,
       price: parsedPrice,
       image: imageUrls,
       seller: req.user._id,
+      status: productStatus,
     });
 
     await product.save();

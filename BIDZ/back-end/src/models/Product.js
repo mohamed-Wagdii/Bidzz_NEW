@@ -28,11 +28,10 @@ const productSchema = new mongoose.Schema({
         ref: "User"
     },
 
-    ////////////////// status should be pending but i will change to test it 
    status: {
     type: String,
     enum: ["pending", "approved", "rejected"],
-    default: "approved"
+    default: "pending"
   }
 }, { timestamps: true });
 
